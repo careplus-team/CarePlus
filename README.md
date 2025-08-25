@@ -1,105 +1,83 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
 
-<p align="center">
- The fastest way to build apps with Next.js and Supabase
-</p>
+# CarePuls – Centralized E-Healthcare Platform
 
-<p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
-</p>
-<br/>
+## 📖 Introduction & Background
+In recent years, the healthcare industry has rapidly digitized its systems to improve efficiency, patient satisfaction, and real-time decision-making. CarePuls is a **centralized e-healthcare service platform** designed specifically for **private medical centers** to improve operational workflows and patient care.  
 
-## Features
+The platform enables patients to easily access medical services online and provides medical centers with tools to operate more efficiently. Key features include:  
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Middleware
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+- Online doctor channeling and appointment booking  
+- Secure access to lab reports  
+- Real-time doctor and patient statistics  
+- Emergency service requests with live location sharing  
+- Digital noticeboard for announcements  
 
-## Demo
+---
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+## ❗ Problem Statement
+Although many healthcare systems are now digital, **private medical centers often lack a centralized e-service system** that integrates real-time scheduling, lab report management, channeling, and emergency handling.  
 
-## Deploy to Vercel
+### Key Pain Points
+- Delayed updates on doctor availability and lab results  
+- Manual channeling processes prone to errors  
+- No monitored notice board for timely announcements  
+- No online emergency support with live geo-tracking  
+- Lack of role-specific data access (admins, doctors, patients)  
 
-Vercel deployment will guide you through creating a Supabase account and project.
+---
 
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+## 🎯 Project Objectives
+- **Real-time Online Channeling & Service Access** – Allow patients to book appointments, view doctor schedules, and access lab reports via a secure, responsive interface.  
+- **Emergency Request System with Live Tracking** – Enable patients to request emergency medical help and instantly share their real-time location for faster ambulance dispatch.  
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
+---
 
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+## 🔍 Similar Systems & Limitations
+1. **MyChart (Epic Systems)** – Strong for patient-doctor communication, lacks emergency services and small clinic customization.  
+2. **eChannelling (Sri Lanka)** – Good for booking, but lacks real-time updates, lab uploads, or admin modular control.  
+3. **Practo** – Offers doctor search and appointments but lacks real-time emergency integration.  
+4. **Doxy.me** – Focuses on telemedicine, not complete center management.  
+5. **1990 Suwa Seriya (Sri Lanka)** – Excellent for emergency ambulance services, but does not provide broader healthcare management.  
 
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
+➡️ **Gap Identified**: A complete, user-friendly, **real-time platform** designed for private medical centers that integrates both management and emergency features.  
 
-## Clone and run locally
+---
 
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
+## 💡 Proposed Solution
+CarePuls will deliver a centralized e-service system with the following core functionalities:  
 
-2. Create a Next.js app using the Supabase Starter template npx command
+- **Role-based Access**: Separate dashboards for Admin, Doctor, and Patient.  
+- **Real-time Doctor Availability & Channeling**: Patients can view schedules, book doctors, and receive billing/receipts.  
+- **Lab Report Management**: Admins upload lab results, patients access them online.  
+- **Emergency Service Integration**: Real-time location tracking (Google Maps API) with ambulance dispatch.  
+- **Noticeboard Announcements**: Admins post channels/events/notices visible to all users. 
 
-   ```bash
-   npx create-next-app --example with-supabase with-supabase-app
-   ```
+---
 
-   ```bash
-   yarn create next-app --example with-supabase with-supabase-app
-   ```
+## 🛠 Technology Stack
 
-   ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
-   ```
+### Backend
+- **Framework**: Next.js (using Server Actions for backend logic)  
+- **Database**: Supabase (PostgreSQL)  
+- **Storage**: Cloudinary for raw data and media  
+- **Authentication**: Clerk, Firebase Auth, or custom email/password  
+- **Validation & SDKs**: Zod, Supabase SDK , Prisma 
 
-3. Use `cd` to change into the app's directory
+### Frontend
+- **Framework**: Next.js + React  
+- **Styling**: TailwindCSS, ShadCN (UI components)  
 
-   ```bash
-   cd with-supabase-app
-   ```
+### Development Tools
+- **Version Control**: Git + GitHub  
+- **Hosting**: Vercel (auto deployments + previews)  
+- **Design Tool**: Figma (wireframes & UI design)  
 
-4. Rename `.env.example` to `.env.local` and update the following:
+## ✅ Conclusion
+CarePuls is designed to be a **centralized, real-time, easy-to-use e-healthcare platform** for private medical centers. It provides patients with seamless access to healthcare services and simplifies operations for doctors and administrators.  
 
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=[INSERT SUPABASE PROJECT API ANON KEY]
-   ```
+By offering features like online channeling, lab report access, real-time statistics, and emergency response with live location sharing, CarePuls aims to improve efficiency, flexibility, and patient satisfaction in modern healthcare.  
 
-   Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
+---
 
-5. You can now run the Next.js local development server:
-
-   ```bash
-   npm run dev
-   ```
-
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
-
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
-
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
-
-## Feedback and issues
-
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
-
-## More Supabase examples
-
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+## 📌 License
+Currently: **All Rights Reserved – Educational Use Only** 
