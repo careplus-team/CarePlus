@@ -8,6 +8,7 @@ import { email, input, z } from "zod";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -51,10 +52,33 @@ const LoginComponent = () => {
         password: userPassword,
       });
       //handle login response
-      if (error) {
-        console.log("Error logging in:", error);
+      if (error?.message === "Invalid login credentials") {
+        toast("Invalid login credentials", {
+          description: "Please check your email and password, then try again.",
+          action: {
+            label: "Refresh",
+            onClick: () => window.location.reload(),
+          },
+        });
+      } else if (data.user == null) {
+        toast("Check Your Email To Verify", {
+          description:
+            "You are already registered. Please check your email to verify.",
+          action: {
+            label: "Open Email",
+            onClick: () => window.open("https://mail.google.com", "_blank"),
+          },
+        });
+      } else if (error) {
+        toast("Login Failed", {
+          description: "An error occurred while logging in. Please try again.",
+          action: {
+            label: "Refresh",
+            onClick: () => window.location.reload(),
+          },
+        });
       }
-      console.log("Login successful:", data);
+
       //redirect user to home page
       router.push("/home");
     });
@@ -157,11 +181,7 @@ const LoginComponent = () => {
           <div className="mt-5">
             <p>
               Don't have an account?{" "}
-              <a
-                disabled={isPending}
-                className="text-white ml-1"
-                href="/register"
-              >
+              <a className="text-white ml-1" href="/signup">
                 Sign Up
               </a>{" "}
             </p>
