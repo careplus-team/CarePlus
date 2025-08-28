@@ -1,7 +1,12 @@
+import HomeComponent from "@/components/auth/home";
 import React from "react";
 
 const Home = () => {
-  return <div>This Is Home</div>;
+  return (
+    <div>
+      <HomeComponent />
+    </div>
+  );
 };
 
 export default Home;

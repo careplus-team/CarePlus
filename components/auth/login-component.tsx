@@ -108,8 +108,8 @@ const LoginComponent = () => {
           />
         </div>
       </div>
-      <div className=" h-2/3 bg-[#0095FF] rounded-tr-3xl rounded-tl-3xl flex flex-col justify-center items-center">
-        <div className="rounded-full h-fit  relative top-[-30px]">
+      <div className="h-2/3 bg-[#0095FF] rounded-tr-3xl rounded-tl-3xl flex flex-col justify-center items-center relative">
+        <div className="absolute left-1/2 -translate-x-1/2 -top-8">
           <Image
             src="/logo.jpg"
             alt="Login Image"
