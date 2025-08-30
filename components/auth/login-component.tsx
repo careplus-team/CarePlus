@@ -97,106 +97,104 @@ const LoginComponent = () => {
     },
   });
   return (
-    <div className="flex flex-col h-screen">
-      <div className="  h-96 justify-center items-center flex">
-        <div>
-          <Image
-            src="/login-img.png"
-            alt="Login Image"
-            width={500}
-            height={300}
-          />
-        </div>
+    <div className="flex flex-col md:flex-row md:justify-center md:items-center h-screen xl:bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className=" absolute top-4 left-4 ">
+        <p className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500  to-green-500 font-bold  text-2xl">
+          <a href="/">CarePlus</a>
+        </p>
       </div>
-      <div className="h-2/3 bg-[#0095FF] rounded-tr-3xl rounded-tl-3xl flex flex-col justify-center items-center relative">
-        <div className="absolute left-1/2 -translate-x-1/2 -top-8">
-          <Image
-            src="/logo.jpg"
-            alt="Login Image"
-            width={100}
-            height={100}
-            className="rounded-full"
-          />
+      <div className="flex flex-col xl:flex-row md:justify-center md:items-center w-full max-w-4xl  bg-white xl:p-10 rounded-xl xl:gap-16">
+        <div className=" mb-10 md:mt-0 mt-24 h-96 justify-center items-center flex">
+          <div>
+            <Image
+              src="/login-img.png"
+              alt="Login Image"
+              width={500}
+              height={300}
+            />
+          </div>
         </div>
-        <div className=" h-fit mb-3 flex flex-col justify-center items-center">
-          {/** Login Form */}
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(submitHandler)}>
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => {
-                  return (
-                    <FormItem>
-                      <FormLabel className="text-[20px] text-white">
-                        Email
-                      </FormLabel>
-                      <FormControl>
-                        <input
-                          className="p-2 rounded-md bg-white text-black w-72"
-                          type="email"
-                          {...field}
-                          placeholder="villiam@gmail.com"
-                          disabled={isPending}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => {
-                  return (
-                    <FormItem>
-                      <FormLabel className="text-[20px] text-white">
-                        Password
-                      </FormLabel>
-                      <FormControl>
-                        <input
-                          className="p-2 rounded-md bg-white text-black w-72"
-                          type="password"
-                          {...field}
-                          placeholder="********"
-                          disabled={isPending}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
+        <div className="h-2/3 bg-[#0095FF] mx-2 rounded-3xl md:rounded-xl md:p-5 rounded-tl-3xl flex flex-col justify-center items-center relative">
+          <div className=" h-fit mb-3 flex flex-col justify-center items-center">
+            {/** Login Form */}
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(submitHandler)}>
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => {
+                    return (
+                      <FormItem>
+                        <FormLabel className="text-[20px] text-white">
+                          Email
+                        </FormLabel>
+                        <FormControl>
+                          <input
+                            className="p-2 rounded-md bg-white text-black w-72"
+                            type="email"
+                            {...field}
+                            placeholder="villiam@gmail.com"
+                            disabled={isPending}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => {
+                    return (
+                      <FormItem>
+                        <FormLabel className="text-[20px] text-white">
+                          Password
+                        </FormLabel>
+                        <FormControl>
+                          <input
+                            className="p-2 rounded-md bg-white text-black w-72"
+                            type="password"
+                            {...field}
+                            placeholder="********"
+                            disabled={isPending}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
+                />
 
-              <Button
-                type="submit"
-                className="p-2  bg-[#291743] text-white w-72 rounded-full mt-10"
-                disabled={isPending}
-              >
-                Login
-              </Button>
-            </form>
-          </Form>
-          <div className="mt-6 flex flex-col gap-3 items-center">
-            <p className="text-white text-sm">
-              Don&apos;t have an account?
-              <a
-                className="ml-2 underline hover:text-[#00406E] transition-colors"
-                href="/signup"
-              >
-                Sign Up
-              </a>
-            </p>
-            <p className="text-white text-sm">
-              Forgot your password?
-              <a
-                className="ml-2 underline hover:text-[#00406E] transition-colors"
-                href="/reset-password"
-              >
-                Reset it
-              </a>
-            </p>
+                <Button
+                  type="submit"
+                  className="p-2  bg-[#291743] text-white w-72 rounded-full mt-10"
+                  disabled={isPending}
+                >
+                  Login
+                </Button>
+              </form>
+            </Form>
+            <div className="mt-6 flex flex-col gap-3 items-center">
+              <p className="text-white text-sm">
+                Don&apos;t have an account?
+                <a
+                  className="ml-2 underline hover:text-[#00406E] transition-colors"
+                  href="/signup"
+                >
+                  Sign Up
+                </a>
+              </p>
+              <p className="text-white text-sm">
+                Forgot your password?
+                <a
+                  className="ml-2 underline hover:text-[#00406E] transition-colors"
+                  href="/reset-password"
+                >
+                  Reset it
+                </a>
+              </p>
+            </div>
           </div>
         </div>
       </div>
