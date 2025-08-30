@@ -137,311 +137,325 @@ const SignUpComponent = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#00406E] via-[#0077B6] to-[#00B4D8] flex items-center justify-center px-2 py-4">
-      <div className="w-full max-w-md mx-auto mb-10">
-        <div className="text-2xl font-extrabold text-center text-white mb-6 drop-shadow-lg">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-2 py-4">
+      <div className=" absolute top-4 left-4 hidden md:block ">
+        <p className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500  to-green-500 font-bold  text-2xl">
+          <a href="/">CarePlus</a>
+        </p>
+      </div>
+      <div className="w-full max-w-md md:max-w-2xl xl:max-w-4xl mx-auto mb-10">
+        <div className="text-2xl font-extrabold text-center text-black mb-6 drop-shadow-lg">
           Care at your fingertips{" "}
-          <span className="text-[#FFD166]">CarePlus</span>
+          <span className=" text-transparent bg-clip-text bg-gradient-to-r from-blue-500  to-green-500 font-bold ">
+            CarePlus
+          </span>
         </div>
-        <div className="bg-white rounded-3xl shadow-3xl p-6">
-          <div className="w-full   justify-center align-middle items-center mb-4 flex flex-col  ">
-            <div className="w-28 h-28 rounded-full  bg-gradient-to-br from-[#e0e7ef] to-[#b6dfff] border-4 border-[#00B4D8] flex items-center justify-center shadow-lg overflow-hidden">
-              {/* Placeholder icon */}
-
-              <Button className="bg-transparent hover:bg-transparent focus:ring-0 w-28 h-28 rounded-full ">
-                <Image
-                  className="min-w-32"
-                  src={profilePic}
-                  alt="Placeholder Icon"
-                  objectFit="contain"
-                  width={100}
-                  height={100}
-                />
-              </Button>
-            </div>
-            <CldUploadWidget
-              uploadPreset="careplus"
-              options={{
-                sources: ["local", "url", "camera", "google_drive", "facebook"],
-                clientAllowedFormats: ["jpg", "jpeg", "png", "gif", "webp"], // ✅ restrict formats
-                multiple: false, // allow only one image
-                folder: "user_profile_pics", // save in Cloudinary folder
-                maxFiles: 1, // limit number of files
-                resourceType: "image", // or "video"
-                tags: ["profile", "user"], // add tags
-              }}
-              onOpen={() => {
-                setProfilePic("/loading01.gif");
-              }}
-              onSuccess={(result, widget) => {
-                console.log("Upload added:", result);
-                setProfilePic(
-                  typeof result.info === "object" &&
-                    result.info !== null &&
-                    "secure_url" in result.info
-                    ? String(
-                        (result.info as { secure_url?: string }).secure_url
-                      )
-                    : ""
-                );
-                if (result.event === "success") {
-                  form.setValue(
-                    "profilePicture",
+        <div className="bg-white rounded-3xl shadow-3xl p-6 md:p-8 shadow-2xl">
+          <div className="md:flex md:gap-6 xl:gap-10">
+            {/* Profile picture section */}
+            <div className="w-full md:w-auto flex flex-col items-center justify-start mb-4 md:mb-0">
+              <div className="w-28 h-28 md:w-32 md:h-32 xl:w-36 xl:h-36 rounded-full bg-gradient-to-br from-[#e0e7ef] to-[#b6dfff] border-4 border-[#00B4D8] flex items-center justify-center shadow-lg overflow-hidden">
+                <Button className="bg-transparent hover:bg-transparent focus:ring-0 w-28 h-28 md:w-32 md:h-32 xl:w-36 xl:h-36 rounded-full">
+                  <Image
+                    className="min-w-32"
+                    src={profilePic}
+                    alt="Placeholder Icon"
+                    objectFit="contain"
+                    width={100}
+                    height={100}
+                  />
+                </Button>
+              </div>
+              <CldUploadWidget
+                uploadPreset="careplus"
+                options={{
+                  sources: [
+                    "local",
+                    "url",
+                    "camera",
+                    "google_drive",
+                    "facebook",
+                  ],
+                  clientAllowedFormats: ["jpg", "jpeg", "png", "gif", "webp"],
+                  multiple: false,
+                  folder: "user_profile_pics",
+                  maxFiles: 1,
+                  resourceType: "image",
+                  tags: ["profile", "user"],
+                }}
+                onOpen={() => {
+                  setProfilePic("/loading01.gif");
+                }}
+                onSuccess={(result, widget) => {
+                  console.log("Upload added:", result);
+                  setProfilePic(
                     typeof result.info === "object" &&
                       result.info !== null &&
                       "secure_url" in result.info
-                      ? (result.info as { secure_url?: string }).secure_url ||
-                          ""
+                      ? String(
+                          (result.info as { secure_url?: string }).secure_url
+                        )
                       : ""
                   );
-                }
-                console.log(form.getValues());
-              }}
-              onAbort={() => {
-                console.log("Upload widget closed", profilePic);
-                if (
-                  profilePic === "/temp_user.webp" ||
-                  profilePic === "/loading01.gif"
-                ) {
-                  setProfilePic("/temp_user.webp");
-                  form.setValue("profilePicture", "/temp_user.webp");
-                }
-                console.log(form.getValues());
-              }}
-            >
-              {({ open }) => {
-                return (
-                  <Button
-                    disabled={isPending}
-                    className="mt-5 bg-transparent text-black border-2 hover:bg-[#17431E] hover:text-white transition-colors duration-500 "
-                    onClick={() => {
-                      open();
-                      setProfilePicButtonText("Update Profile Picture");
-                    }}
-                  >
-                    {profilePicButtonText}
-                  </Button>
-                );
-              }}
-            </CldUploadWidget>
+                  if (result.event === "success") {
+                    form.setValue(
+                      "profilePicture",
+                      typeof result.info === "object" &&
+                        result.info !== null &&
+                        "secure_url" in result.info
+                        ? (result.info as { secure_url?: string }).secure_url ||
+                            ""
+                        : ""
+                    );
+                  }
+                  console.log(form.getValues());
+                }}
+                onAbort={() => {
+                  console.log("Upload widget closed", profilePic);
+                  if (
+                    profilePic === "/temp_user.webp" ||
+                    profilePic === "/loading01.gif"
+                  ) {
+                    setProfilePic("/temp_user.webp");
+                    form.setValue("profilePicture", "/temp_user.webp");
+                  }
+                  console.log(form.getValues());
+                }}
+              >
+                {({ open }) => {
+                  return (
+                    <Button
+                      disabled={isPending}
+                      className="mt-5 bg-transparent text-black border-2 hover:bg-[#17431E] hover:text-white transition-colors duration-500"
+                      onClick={() => {
+                        open();
+                        setProfilePicButtonText("Update Profile Picture");
+                      }}
+                    >
+                      {profilePicButtonText}
+                    </Button>
+                  );
+                }}
+              </CldUploadWidget>
+            </div>
+
+            {/* Form section */}
+            <div className="flex-1">
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(registerUserFunction)}
+                  className="bg-white rounded-2xl space-y-4"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[#00406E] font-semibold">
+                            Name
+                          </FormLabel>
+                          <FormControl>
+                            <input
+                              disabled={isPending}
+                              type="text"
+                              {...field}
+                              className="w-full py-3 px-4 rounded-xl bg-[#F1F5F9] border border-[#E0E0E0] focus:outline-none focus:ring-2 focus:ring-[#00B4D8] transition"
+                              placeholder="Enter your name"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[#00406E] font-semibold">
+                            Email
+                          </FormLabel>
+                          <FormControl>
+                            <input
+                              disabled={isPending}
+                              type="email"
+                              {...field}
+                              className="w-full py-3 px-4 rounded-xl bg-[#F1F5F9] border border-[#E0E0E0] focus:outline-none focus:ring-2 focus:ring-[#00B4D8] transition"
+                              placeholder="Enter your email"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[#00406E] font-semibold">
+                            Username
+                          </FormLabel>
+                          <FormControl>
+                            <input
+                              disabled={isPending}
+                              type="text"
+                              {...field}
+                              className="w-full py-3 px-4 rounded-xl bg-[#F1F5F9] border border-[#E0E0E0] focus:outline-none focus:ring-2 focus:ring-[#00B4D8] transition"
+                              placeholder="Choose a username"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="mobilenumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[#00406E] font-semibold">
+                            Mobile Number
+                          </FormLabel>
+                          <FormControl>
+                            <input
+                              disabled={isPending}
+                              type="text"
+                              {...field}
+                              className="w-full py-3 px-4 rounded-xl bg-[#F1F5F9] border border-[#E0E0E0] focus:outline-none focus:ring-2 focus:ring-[#00B4D8] transition"
+                              placeholder="Enter mobile number"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem className="md:col-span-2">
+                          <FormLabel className="text-[#00406E] font-semibold">
+                            Address
+                          </FormLabel>
+                          <FormControl>
+                            <input
+                              disabled={isPending}
+                              type="text"
+                              {...field}
+                              className="w-full py-3 px-4 rounded-xl bg-[#F1F5F9] border border-[#E0E0E0] focus:outline-none focus:ring-2 focus:ring-[#00B4D8] transition"
+                              placeholder="Enter your address"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="dateofbirth"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[#00406E] font-semibold">
+                            Date Of Birth
+                          </FormLabel>
+                          <FormControl>
+                            <input
+                              disabled={isPending}
+                              type="date"
+                              {...field}
+                              className="w-full py-3 px-4 rounded-xl bg-[#F1F5F9] border border-[#E0E0E0] focus:outline-none focus:ring-2 focus:ring-[#00B4D8] transition"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="gender"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[#00406E] font-semibold">
+                            Gender
+                          </FormLabel>
+                          <FormControl>
+                            <select
+                              disabled={isPending}
+                              {...field}
+                              className="w-full py-3 px-4 rounded-xl bg-[#F1F5F9] border border-[#E0E0E0] focus:outline-none focus:ring-2 focus:ring-[#00B4D8] transition"
+                            >
+                              <option value="" disabled>
+                                Select Gender
+                              </option>
+                              <option value="male">Male</option>
+                              <option value="female">Female</option>
+                              <option value="other">Other</option>
+                            </select>
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[#00406E] font-semibold">
+                            Password
+                          </FormLabel>
+                          <FormControl>
+                            <input
+                              disabled={isPending}
+                              type="password"
+                              {...field}
+                              className="w-full py-3 px-4 rounded-xl bg-[#F1F5F9] border border-[#E0E0E0] focus:outline-none focus:ring-2 focus:ring-[#00B4D8] transition"
+                              placeholder="Enter password"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[#00406E] font-semibold">
+                            Confirm Password
+                          </FormLabel>
+                          <FormControl>
+                            <input
+                              disabled={isPending}
+                              type="password"
+                              {...field}
+                              className="w-full py-3 px-4 rounded-xl bg-[#F1F5F9] border border-[#E0E0E0] focus:outline-none focus:ring-2 focus:ring-[#00B4D8] transition"
+                              placeholder="Re-enter password"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="flex justify-center mt-6">
+                    <Button
+                      disabled={isPending}
+                      className="w-full py-3 rounded-xl bg-[#17431E] text-white font-bold text-lg shadow-lg hover:scale-105 transition-transform"
+                      type="submit"
+                    >
+                      Sign Up
+                    </Button>
+                  </div>
+                  <div className="text-center mt-4 text-sm text-[#00406E]">
+                    Already have an account?{" "}
+                    <a
+                      className="text-[#00B4D8] font-semibold underline"
+                      href="/login"
+                    >
+                      Login
+                    </a>
+                  </div>
+                </form>
+              </Form>
+            </div>
           </div>
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(registerUserFunction)}
-              className="bg-white rounded-2xl   space-y-4"
-            >
-              <div className="grid grid-cols-1 gap-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-[#00406E] font-semibold">
-                        Name
-                      </FormLabel>
-                      <FormControl>
-                        <input
-                          disabled={isPending}
-                          type="text"
-                          {...field}
-                          className="w-full py-3 px-4 rounded-xl bg-[#F1F5F9] border border-[#E0E0E0] focus:outline-none focus:ring-2 focus:ring-[#00B4D8] transition"
-                          placeholder="Enter your name"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-[#00406E] font-semibold">
-                        Email
-                      </FormLabel>
-                      <FormControl>
-                        <input
-                          disabled={isPending}
-                          type="email"
-                          {...field}
-                          className="w-full py-3 px-4 rounded-xl bg-[#F1F5F9] border border-[#E0E0E0] focus:outline-none focus:ring-2 focus:ring-[#00B4D8] transition"
-                          placeholder="Enter your email"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-[#00406E] font-semibold">
-                        Address
-                      </FormLabel>
-                      <FormControl>
-                        <input
-                          disabled={isPending}
-                          type="text"
-                          {...field}
-                          className="w-full py-3 px-4 rounded-xl bg-[#F1F5F9] border border-[#E0E0E0] focus:outline-none focus:ring-2 focus:ring-[#00B4D8] transition"
-                          placeholder="Enter your address"
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <div className="flex gap-3">
-                  <FormField
-                    control={form.control}
-                    name="dateofbirth"
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel className="text-[#00406E] font-semibold">
-                          Date Of Birth
-                        </FormLabel>
-                        <FormControl>
-                          <input
-                            disabled={isPending}
-                            type="date"
-                            {...field}
-                            className="w-full py-3 px-4 rounded-xl bg-[#F1F5F9] border border-[#E0E0E0] focus:outline-none focus:ring-2 focus:ring-[#00B4D8] transition"
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="gender"
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel className="text-[#00406E] font-semibold">
-                          Gender
-                        </FormLabel>
-                        <FormControl>
-                          <select
-                            disabled={isPending}
-                            {...field}
-                            className="w-full py-3 px-4 rounded-xl bg-[#F1F5F9] border border-[#E0E0E0] focus:outline-none focus:ring-2 focus:ring-[#00B4D8] transition"
-                          >
-                            <option value="" disabled>
-                              Select Gender
-                            </option>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                            <option value="other">Other</option>
-                          </select>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className="flex gap-3">
-                  <FormField
-                    control={form.control}
-                    name="mobilenumber"
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel className="text-[#00406E] font-semibold">
-                          Mobile Number
-                        </FormLabel>
-                        <FormControl>
-                          <input
-                            disabled={isPending}
-                            type="text"
-                            {...field}
-                            className="w-full py-3 px-4 rounded-xl bg-[#F1F5F9] border border-[#E0E0E0] focus:outline-none focus:ring-2 focus:ring-[#00B4D8] transition"
-                            placeholder="Enter mobile number"
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel className="text-[#00406E] font-semibold">
-                          Username
-                        </FormLabel>
-                        <FormControl>
-                          <input
-                            disabled={isPending}
-                            type="text"
-                            {...field}
-                            className="w-full py-3 px-4 rounded-xl bg-[#F1F5F9] border border-[#E0E0E0] focus:outline-none focus:ring-2 focus:ring-[#00B4D8] transition"
-                            placeholder="Choose a username"
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-[#00406E] font-semibold">
-                        Password
-                      </FormLabel>
-                      <FormControl>
-                        <input
-                          disabled={isPending}
-                          type="password"
-                          {...field}
-                          className="w-full py-3 px-4 rounded-xl bg-[#F1F5F9] border border-[#E0E0E0] focus:outline-none focus:ring-2 focus:ring-[#00B4D8] transition"
-                          placeholder="Enter password"
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-[#00406E] font-semibold">
-                        Confirm Password
-                      </FormLabel>
-                      <FormControl>
-                        <input
-                          disabled={isPending}
-                          type="password"
-                          {...field}
-                          className="w-full py-3 px-4 rounded-xl bg-[#F1F5F9] border border-[#E0E0E0] focus:outline-none focus:ring-2 focus:ring-[#00B4D8] transition"
-                          placeholder="Re-enter password"
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="flex justify-center mt-6">
-                <Button
-                  disabled={isPending}
-                  className="w-full py-3 rounded-xl bg-[#17431E] text-white font-bold text-lg shadow-lg hover:scale-105 transition-transform"
-                  type="submit"
-                >
-                  Sign Up
-                </Button>
-              </div>
-              <div className="text-center mt-4 text-sm text-[#00406E]">
-                Already have an account?{" "}
-                <a
-                  className="text-[#00B4D8] font-semibold underline"
-                  href="/login"
-                >
-                  Login
-                </a>
-              </div>
-            </form>
-          </Form>
         </div>
       </div>
     </div>
