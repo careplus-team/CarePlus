@@ -178,12 +178,24 @@ const LoginComponent = () => {
               </Button>
             </form>
           </Form>
-          <div className="mt-5">
-            <p>
-              Don't have an account?{" "}
-              <a className="text-white ml-1" href="/signup">
+          <div className="mt-6 flex flex-col gap-3 items-center">
+            <p className="text-white text-sm">
+              Don&apos;t have an account?
+              <a
+                className="ml-2 underline hover:text-[#00406E] transition-colors"
+                href="/signup"
+              >
                 Sign Up
-              </a>{" "}
+              </a>
+            </p>
+            <p className="text-white text-sm">
+              Forgot your password?
+              <a
+                className="ml-2 underline hover:text-[#00406E] transition-colors"
+                href="/reset-password"
+              >
+                Reset it
+              </a>
             </p>
           </div>
         </div>
