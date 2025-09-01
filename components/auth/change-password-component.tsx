@@ -73,8 +73,6 @@ const ChangePasswordComponent = () => {
                 New Password
               </label>
               <input
-                min={8}
-                max={100}
                 className="border-2 mt-3 border-gray-300 p-2 rounded-md mb-4 w-64 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 type="password"
                 placeholder="New Password"

@@ -65,7 +65,7 @@ const SignUpComponent = () => {
         email: data.email,
         password: data.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/confirm?next=/home`,
+          emailRedirectTo: `https://mycareplus.vercel.app/confirm?next=/home`,
         },
       });
       console.log("User registered:", userData);
