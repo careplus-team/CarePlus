@@ -91,3 +91,12 @@ model notice {
 
   @@schema("public")
 }
+
+model healthtip {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@schema("public")
+}
