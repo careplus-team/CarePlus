@@ -1,4 +1,4 @@
-import ChangePasswordComponent from "@/components/auth/change-password-component";
+import ChangePasswordComponent from "@/components/user-auth/change-password-component";
 import React from "react";
 
 const ChangePassword = () => {

@@ -55,6 +55,7 @@ model doctor {
   address        String?
   workplace      String?
   bio            String?
+  verification   Boolean  @default(false)
   profilePicture String?  @default("/temp_doctor.webp")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @default(now())
