@@ -1,17 +1,66 @@
 "use client";
 import { createClient } from "@/lib/supabase/client";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { Button } from "../ui/button";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { start } from "node:repl";
+import axios from "axios";
+import { toast } from "sonner";
 
 const HomeComponent = () => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [userInfo, setUserInfo] = React.useState<any>(null);
   const [dbUserInfo, setDbUserInfo] = React.useState<any>(null);
+
+  const [isPendingNotice, startTransitionNotice] = useTransition();
+
+  const [notices, setNotices] = useState<any[]>([]);
+
+  const supabaseClient = createClient();
+
+  useEffect(() => {
+    // 1. Fetch initial notices
+
+    startTransitionNotice(async () => {
+      const noticeData = await axios.get("/api/notice-get-api");
+      if (noticeData.data.success) {
+        setNotices(noticeData.data.data || []);
+      } else {
+        toast.error("Error fetching notices");
+        return;
+      }
+    });
+
+    // 2. Subscribe for realtime updates
+    const channel = supabaseClient
+      .channel("realtime:notice")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notice" },
+        (payload) => {
+          console.log("Realtime update:", payload);
+
+          if (payload.eventType === "INSERT") {
+            setNotices((prev) => [payload.new, ...prev]);
+          } else if (payload.eventType === "DELETE") {
+            setNotices((prev) => prev.filter((n) => n.id !== payload.old.id));
+          } else if (payload.eventType === "UPDATE") {
+            setNotices((prev) =>
+              prev.map((n) => (n.id === payload.new.id ? payload.new : n))
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    // 3. Cleanup on unmount
+    return () => {
+      supabaseClient.removeChannel(channel);
+    };
+  }, []);
 
   const getUserInfoFromDb = (email: any) => {
     startTransition(async () => {
@@ -555,29 +604,7 @@ const HomeComponent = () => {
 
               <div className="p-6 h-full">
                 <div className="space-y-4 max-h-80 overflow-y-auto">
-                  {[
-                    {
-                      title: "New COVID-19 Guidelines",
-                      content:
-                        "New COVID-19 guidelines have been issued. Please wear masks at all times within the hospital premises.",
-                      priority: "high",
-                      date: "2 days ago",
-                    },
-                    {
-                      title: "Holiday Notice",
-                      content:
-                        "The hospital will be closed on 25th December for Christmas celebrations.",
-                      priority: "medium",
-                      date: "1 week ago",
-                    },
-                    {
-                      title: "Free Health Camp",
-                      content:
-                        "Free health check-up camp on 15th November. Register at the reception desk.",
-                      priority: "low",
-                      date: "3 days ago",
-                    },
-                  ].map((notice, index) => (
+                  {notices.map((notice, index) => (
                     <div
                       key={index}
                       className="p-4 bg-slate-50 rounded-xl border-l-4 border-l-amber-400"
@@ -588,14 +615,14 @@ const HomeComponent = () => {
                         </h4>
                         <span
                           className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            notice.priority === "high"
+                            notice.piority === "high"
                               ? "bg-red-100 text-red-700"
-                              : notice.priority === "medium"
+                              : notice.piority === "medium"
                               ? "bg-yellow-100 text-yellow-700"
                               : "bg-green-100 text-green-700"
                           }`}
                         >
-                          {notice.priority}
+                          {notice.piority}
                         </span>
                       </div>
                       <p className="text-sm text-gray-600 mb-2">
