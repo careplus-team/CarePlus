@@ -35,18 +35,22 @@ const DoctorLogin = () => {
       if (response.data.success) {
         const doctorProfile = response.data.data;
         console.log("Doctor Profile:", doctorProfile);
-        //Redirect to doctor dashboard
+        //Redirect to doctor dashboard if the profile exists
         //router.push("/doctor/dashboard");
         console.log("redirect to doctor dashboard");
       } else {
-        toast.error(response.data.message);
+        await supabase.auth.signOut();
+        toast.error('this account is not registered as a doctor');
+        router.push("/login")
       }
     } catch (err) {
-      toast.error("Failed to fetch doctor profile");
+      toast.error("Failed to verify doctor profile");
+      await supabase.auth.signOut();
+      router.push("/login");
     } finally {
       setLoading(false);
     }
-    // check whether the user is a doctor
+    // check whether the user is a doctor 
   };
 
   return (

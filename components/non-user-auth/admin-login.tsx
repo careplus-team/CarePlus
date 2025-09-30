@@ -37,6 +37,8 @@ const AdminLogin = () => {
       const result = await res.json();
       if (!result.isAdmin) {
         toast.error("You are not an admin");
+        await supabase.auth.signOut();
+        router.push("/login");
         setLoading(false);
         return;
       }
@@ -46,6 +48,8 @@ const AdminLogin = () => {
       console.log("admin verified, redirect to dashboard");
     } catch (err) {
       toast.error("Failed to verify admin");
+      await supabase.auth.signOut();
+      router.push("/login");
     } finally {
       setLoading(false);
     }
