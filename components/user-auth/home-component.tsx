@@ -1,17 +1,110 @@
 "use client";
 import { createClient } from "@/lib/supabase/client";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { Button } from "../ui/button";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { start } from "node:repl";
+import axios from "axios";
+import { toast } from "sonner";
 
 const HomeComponent = () => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [userInfo, setUserInfo] = React.useState<any>(null);
   const [dbUserInfo, setDbUserInfo] = React.useState<any>(null);
+
+  const [isPendingNotice, startTransitionNotice] = useTransition();
+
+  const [notices, setNotices] = useState<any[]>([]);
+
+  const supabaseClient = createClient();
+
+  const [tips, setTips] = useState<any[]>([]);
+  const [isPendingTips, startTransitionTips] = useTransition();
+
+  useEffect(() => {
+    // 1. Fetch initial notices
+
+    startTransitionNotice(async () => {
+      const noticeData = await axios.get("/api/notice-get-api");
+      if (noticeData.data.success) {
+        setNotices(noticeData.data.data || []);
+      } else {
+        toast.error("Error fetching notices");
+        return;
+      }
+    });
+
+    // 2. Subscribe for realtime updates
+    const channel = supabaseClient
+      .channel("realtime:notice")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notice" },
+        (payload) => {
+          console.log("Realtime update:", payload);
+
+          if (payload.eventType === "INSERT") {
+            setNotices((prev) => [payload.new, ...prev]);
+          } else if (payload.eventType === "DELETE") {
+            setNotices((prev) => prev.filter((n) => n.id !== payload.old.id));
+          } else if (payload.eventType === "UPDATE") {
+            setNotices((prev) =>
+              prev.map((n) => (n.id === payload.new.id ? payload.new : n))
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    // 3. Cleanup on unmount
+    return () => {
+      supabaseClient.removeChannel(channel);
+    };
+  }, []);
+
+  useEffect(() => {
+    // 1. Fetch initial tips
+
+    startTransitionTips(async () => {
+      const tipsData = await axios.get("/api/health-tip-get-api");
+      if (tipsData.data.success) {
+        setTips(tipsData.data.data || []);
+      } else {
+        toast.error("Error fetching tips");
+        return;
+      }
+    });
+
+    // 2. Subscribe for realtime updates
+    const channel = supabaseClient
+      .channel("realtime:notice")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "healthtip" },
+        (payload) => {
+          console.log("Realtime update:", payload);
+
+          if (payload.eventType === "INSERT") {
+            setTips((prev) => [payload.new, ...prev]);
+          } else if (payload.eventType === "DELETE") {
+            setTips((prev) => prev.filter((n) => n.id !== payload.old.id));
+          } else if (payload.eventType === "UPDATE") {
+            setTips((prev) =>
+              prev.map((n) => (n.id === payload.new.id ? payload.new : n))
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    // 3. Cleanup on unmount
+    return () => {
+      supabaseClient.removeChannel(channel);
+    };
+  }, []);
 
   const getUserInfoFromDb = (email: any) => {
     startTransition(async () => {
@@ -555,55 +648,51 @@ const HomeComponent = () => {
 
               <div className="p-6 h-full">
                 <div className="space-y-4 max-h-80 overflow-y-auto">
-                  {[
-                    {
-                      title: "New COVID-19 Guidelines",
-                      content:
-                        "New COVID-19 guidelines have been issued. Please wear masks at all times within the hospital premises.",
-                      priority: "high",
-                      date: "2 days ago",
-                    },
-                    {
-                      title: "Holiday Notice",
-                      content:
-                        "The hospital will be closed on 25th December for Christmas celebrations.",
-                      priority: "medium",
-                      date: "1 week ago",
-                    },
-                    {
-                      title: "Free Health Camp",
-                      content:
-                        "Free health check-up camp on 15th November. Register at the reception desk.",
-                      priority: "low",
-                      date: "3 days ago",
-                    },
-                  ].map((notice, index) => (
-                    <div
-                      key={index}
-                      className="p-4 bg-slate-50 rounded-xl border-l-4 border-l-amber-400"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <h4 className="font-semibold text-gray-900 text-sm">
-                          {notice.title}
-                        </h4>
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            notice.priority === "high"
-                              ? "bg-red-100 text-red-700"
-                              : notice.priority === "medium"
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "bg-green-100 text-green-700"
-                          }`}
+                  {isPendingNotice ? (
+                    <div className="space-y-4">
+                      {Array.from({ length: 3 }).map((_, index) => (
+                        <div
+                          key={index}
+                          className="p-4 bg-slate-50 rounded-xl border-l-4 border-l-amber-400 animate-pulse"
                         >
-                          {notice.priority}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-2">
-                        {notice.content}
-                      </p>
-                      <p className="text-xs text-gray-500">{notice.date}</p>
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                            <div className="h-5 bg-gray-300 rounded w-16"></div>
+                          </div>
+                          <div className="h-3 bg-gray-300 rounded w-full mb-2"></div>
+                          <div className="h-3 bg-gray-300 rounded w-1/2"></div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  ) : (
+                    notices.map((notice, index) => (
+                      <div
+                        key={index}
+                        className="p-4 bg-slate-50 rounded-xl border-l-4 border-l-amber-400"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="font-semibold text-gray-900 text-sm">
+                            {notice.title}
+                          </h4>
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              notice.piority === "high"
+                                ? "bg-red-100 text-red-700"
+                                : notice.piority === "medium"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-green-100 text-green-700"
+                            }`}
+                          >
+                            {notice.piority}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2">
+                          {notice.content}
+                        </p>
+                        <p className="text-xs text-gray-500">{notice.date}</p>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -617,35 +706,48 @@ const HomeComponent = () => {
 
               <div className="p-6 h-full">
                 <div className="space-y-4">
-                  {[
-                    "Stay hydrated! Drink at least 8 glasses of water daily.",
-                    "Take short breaks during work to stretch and move around.",
-                    "Include more vegetables and fruits in your daily meals.",
-                    "Get at least 7-8 hours of quality sleep every night.",
-                    "Practice deep breathing exercises to reduce stress.",
-                  ].map((tip, index) => (
-                    <div
-                      key={index}
-                      className="flex items-start space-x-3 p-3 bg-green-50 rounded-lg"
-                    >
-                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <svg
-                          className="w-4 h-4 text-green-600"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
+                  {isPendingTips ? (
+                    <div className="space-y-4">
+                      {Array.from({ length: 3 }).map((_, index) => (
+                        <div
+                          key={index}
+                          className="flex items-start space-x-3 p-3 bg-green-50 rounded-lg animate-pulse"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                      </div>
-                      <p className="text-sm text-gray-700">{tip}</p>
+                          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <div className="w-4 h-4 bg-gray-300 rounded"></div>
+                          </div>
+                          <div className="flex-1 space-y-2">
+                            <div className="h-4 bg-gray-300 rounded w-full"></div>
+                            <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  ) : (
+                    tips.map((tip, index) => (
+                      <div
+                        key={index}
+                        className="flex items-start space-x-3 p-3 bg-green-50 rounded-lg"
+                      >
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <svg
+                            className="w-4 h-4 text-green-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        </div>
+                        <p className="text-sm text-gray-700">{tip.content}</p>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>

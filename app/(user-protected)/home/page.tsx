@@ -1,4 +1,4 @@
-import HomeComponent from "@/components/user-auth/home";
+import HomeComponent from "@/components/user-auth/home-component";
 import React from "react";
 
 const Home = () => {

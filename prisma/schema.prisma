@@ -45,6 +45,14 @@ enum role {
   @@schema("public")
 }
 
+enum piority {
+  low
+  medium
+  high
+
+  @@schema("public")
+}
+
 model doctor {
   name           String
   email          String   @id @unique
@@ -67,6 +75,26 @@ model admin {
   email     String   @id @unique
   name      String
   phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@schema("public")
+}
+
+model notice {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  piority   piority  @default(low)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@schema("public")
+}
+
+model healthtip {
+  id        Int      @id @default(autoincrement())
+  content   String
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
 
