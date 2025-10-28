@@ -162,7 +162,7 @@ const HomeComponent = () => {
                 {isPending ? (
                   <span className="inline-block animate-pulse bg-gray-300 h-8 w-24 rounded mx-2"></span>
                 ) : (
-                  dbUserInfo?.name
+                  dbUserInfo?.name.toLowerCase()
                 )}
                 ! 👋
               </h2>

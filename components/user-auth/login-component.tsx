@@ -60,7 +60,6 @@ const LoginComponent = () => {
             onClick: () => window.location.reload(),
           },
         });
-        return;
       } else if (data.user == null) {
         toast("Check Your Email To Verify", {
           description:
@@ -70,7 +69,6 @@ const LoginComponent = () => {
             onClick: () => window.open("https://mail.google.com", "_blank"),
           },
         });
-        return;
       } else if (error) {
         toast("Login Failed", {
           description: "An error occurred while logging in. Please try again.",
@@ -79,7 +77,6 @@ const LoginComponent = () => {
             onClick: () => window.location.reload(),
           },
         });
-        return;
       }
 
       //redirect user to home page
