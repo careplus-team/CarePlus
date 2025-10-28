@@ -1,5 +1,5 @@
 
-# CarePuls – Centralized E-Healthcare Platform
+# CarePlus – Centralized E-Healthcare Platform
 
 ## 📖 Introduction & Background
 In recent years, the healthcare industry has rapidly digitized its systems to improve efficiency, patient satisfaction, and real-time decision-making. CarePuls is a **centralized e-healthcare service platform** designed specifically for **private medical centers** to improve operational workflows and patient care.  
