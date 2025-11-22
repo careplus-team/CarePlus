@@ -2,7 +2,7 @@
 import { createClient } from "@/lib/supabase/client";
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
-import { Button } from "../ui/button";
+import { Button } from "../../ui/button";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { start } from "node:repl";
