@@ -1,4 +1,4 @@
-import DoctorLoginComponent from "@/components/doctor-components/doctor-login-component";
+import DoctorLoginComponent from "@/components/doctor-components/doctor-auth/doctor-login-component";
 import React from "react";
 
 const DoctorLogin = () => {
