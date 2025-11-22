@@ -1,4 +1,4 @@
-import AdminLoginComponent from "@/components/non-user-auth/admin-login-components";
+import AdminLoginComponent from "@/components/admin-components/admin-auth/admin-login-components";
 import React from "react";
 
 const AdminLoginPage = () => {
