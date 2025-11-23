@@ -56,7 +56,7 @@ const ChangePasswordComponent = () => {
         <div className="hidden md:flex justify-center items-center p-10 ">
           <Image
             className="w-96 max-w-xs md:max-w-sm lg:max-w-md object-contain drop-shadow-lg"
-            src="/change-password.webp"
+            src="/change-password.jpg"
             height={350}
             width={350}
             alt="Change Password"
