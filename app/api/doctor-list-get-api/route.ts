@@ -1,11 +1,42 @@
 import { supabaseServer } from "@/lib/supabase/admin";
 import { NextResponse, NextRequest } from "next/server";
 
-// Create GET API to fetch the list of doctors
-
 export async function POST(req: NextRequest) {
   try {
-    const doctorList = await supabaseServer.from("doctor").select("*");
+    const requestData = await req.json();
+    console.log("Request Data:", requestData);
+
+    //API to fetch list of doctors who offer OPD services
+    //Request Body Must contain { "command": "OPD" } to trigger this condition
+
+    if (requestData.command && requestData.command === "OPD") {
+      const doctorList = await supabaseServer
+        .from("doctor")
+        .select("*")
+        .eq("OPD", true)
+        .eq("verification", true);
+      console.log(doctorList);
+
+      if (doctorList.error) {
+        return NextResponse.json({
+          data: null,
+          success: false,
+          message: doctorList.error.message,
+        });
+      }
+      return NextResponse.json({
+        data: doctorList.data,
+        success: true,
+        message: "Doctor list fetched successfully",
+      });
+    }
+
+    // Create API to fetch the list of doctors
+
+    const doctorList = await supabaseServer
+      .from("doctor")
+      .select("*")
+      .eq("verification", true);
     console.log(doctorList);
     if (doctorList.error) {
       return NextResponse.json({
