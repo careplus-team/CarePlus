@@ -76,6 +76,12 @@ export async function POST(req: NextRequest) {
         message: "Patients count incremented successfully",
       });
     }
+
+    NextResponse.json({
+      data: null,
+      success: false,
+      message: "Invalid action",
+    });
   } catch (e) {
     console.log(e);
     return NextResponse.json(
