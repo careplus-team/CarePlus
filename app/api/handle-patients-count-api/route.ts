@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    NextResponse.json({
+    return NextResponse.json({
       data: null,
       success: false,
       message: "Invalid action",
