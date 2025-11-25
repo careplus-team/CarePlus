@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect } from "react";
-import { Button } from "../ui/button";
+import { Button } from "../../ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
