@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect } from "react";
-import { Button } from "../ui/button";
+import { Button } from "../../ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -56,7 +56,7 @@ const ChangePasswordComponent = () => {
         <div className="hidden md:flex justify-center items-center p-10 ">
           <Image
             className="w-96 max-w-xs md:max-w-sm lg:max-w-md object-contain drop-shadow-lg"
-            src="/change-password.webp"
+            src="/change-password.jpg"
             height={350}
             width={350}
             alt="Change Password"

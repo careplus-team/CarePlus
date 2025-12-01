@@ -1,10 +1,7 @@
-
 "use client";
 
 import React from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -23,13 +20,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SignUpSchema } from "@/lib/zod-schema/signup.schema";
-import { UserPlus, Upload, Stethoscope, MapPin, Phone, Mail, Calendar, Users } from "lucide-react";
 
+import {
+  UserPlus,
+  Upload,
+  Stethoscope,
+  MapPin,
+  Phone,
+  Mail,
+  Calendar,
+  Users,
+} from "lucide-react";
 
 function DoctorRegistrationComponent() {
   const form = useForm({
-   
     defaultValues: {
       name: "",
       email: "",
@@ -83,21 +87,23 @@ function DoctorRegistrationComponent() {
                 <Upload className="h-4 w-4 text-blue-600" />
               </Button>
             </div>
-            <Button variant="link" className="mt-3 text-blue-600 hover:text-blue-700 font-medium">
+            <Button
+              variant="link"
+              className="mt-3 text-blue-600 hover:text-blue-700 font-medium"
+            >
               Upload Profile Picture
             </Button>
           </div>
 
           <Form {...form}>
-            <form 
-              onSubmit={form.handleSubmit(onSubmit)} 
-              className="space-y-6"
-            >
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* Personal Information Section */}
               <div className="space-y-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Users className="h-5 w-5 text-blue-600" />
-                  <h2 className="text-xl font-semibold text-gray-800">Personal Information</h2>
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    Personal Information
+                  </h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
@@ -237,7 +243,9 @@ function DoctorRegistrationComponent() {
               <div className="space-y-6 pt-6 border-t border-gray-200">
                 <div className="flex items-center gap-2 mb-4">
                   <Stethoscope className="h-5 w-5 text-green-600" />
-                  <h2 className="text-xl font-semibold text-gray-800">Professional Information</h2>
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    Professional Information
+                  </h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
@@ -306,7 +314,9 @@ function DoctorRegistrationComponent() {
                   <div className="p-1 bg-yellow-100 rounded-lg">
                     <div className="w-4 h-4 bg-yellow-500 rounded"></div>
                   </div>
-                  <h2 className="text-xl font-semibold text-gray-800">Security</h2>
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    Security
+                  </h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
