@@ -91,6 +91,25 @@ model opdsession {
   @@schema("public")
 }
 
+model channel {
+  id                  BigInt    @id(map: "Channel_pkey") @default(autoincrement())
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+  name                String?
+  doctorName          String?
+  doctorEmail         String?
+  date                DateTime? @db.Date
+  time                DateTime? @db.Time(6)
+  totalSlots          Int?
+  state               String?   @default("Not Yet Started")
+  roomNumber          Int?      @db.SmallInt
+  estimateWaitingTime Int?
+  description         String?
+  remainingSlots      Int?
+  currentNumber       Int?      @default(0)
+
+  @@schema("public")
+}
+
 enum gender {
   male
   female
