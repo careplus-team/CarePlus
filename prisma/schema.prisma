@@ -27,32 +27,6 @@ model user {
   @@schema("public")
 }
 
-enum gender {
-  male
-  female
-  other
-
-  @@schema("public")
-}
-
-enum role {
-  user
-  admin
-  doctor
-  emergency_manager
-  ambulance_operator
-
-  @@schema("public")
-}
-
-enum piority {
-  low
-  medium
-  high
-
-  @@schema("public")
-}
-
 model doctor {
   name           String
   email          String   @id @unique
@@ -63,10 +37,11 @@ model doctor {
   address        String?
   workplace      String?
   bio            String?
-  verification   Boolean  @default(false)
   profilePicture String?  @default("/temp_doctor.webp")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @default(now())
+  verification   Boolean  @default(false)
+  OPD            Boolean? @default(false)
 
   @@schema("public")
 }
@@ -97,6 +72,66 @@ model healthtip {
   content   String
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+
+  @@schema("public")
+}
+
+model opdsession {
+  id                      BigInt    @id(map: "model opdsession {_pkey") @default(autoincrement())
+  created_at              DateTime  @default(now()) @db.Timestamptz(6)
+  doctorEmail             String?
+  doctorName              String?
+  startTime               DateTime? @db.Time(6)
+  endTime                 DateTime? @db.Time(6)
+  numberOfPatientsSlots   Int?
+  estimatedTimePerPatient BigInt?
+  notes                   String?
+  updatedAt               DateTime? @default(now()) @db.Timestamp(6)
+
+  @@schema("public")
+}
+
+model channel {
+  id                  BigInt    @id(map: "Channel_pkey") @default(autoincrement())
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+  name                String?
+  doctorName          String?
+  doctorEmail         String?
+  date                DateTime? @db.Date
+  time                DateTime? @db.Time(6)
+  totalSlots          Int?
+  state               String?   @default("Not Yet Started")
+  roomNumber          Int?      @db.SmallInt
+  estimateWaitingTime Int?
+  description         String?
+  remainingSlots      Int?
+  currentNumber       Int?      @default(0)
+
+  @@schema("public")
+}
+
+enum gender {
+  male
+  female
+  other
+
+  @@schema("public")
+}
+
+enum role {
+  user
+  admin
+  doctor
+  emergency_manager
+  ambulance_operator
+
+  @@schema("public")
+}
+
+enum piority {
+  low
+  medium
+  high
 
   @@schema("public")
 }
