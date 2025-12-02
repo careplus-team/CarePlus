@@ -12,8 +12,7 @@ export async function POST(req: NextRequest) {
       .insert({
         doctorEmail: requestData.doctorEmail,
         doctorName: requestData.doctorName,
-        startTime: requestData.startTime,
-        endTime: requestData.endTime,
+        timeSlot: requestData.timeSlot,
         numberOfPatientsSlots: requestData.numberOfPatientsSlots,
         estimatedTimePerPatient: requestData.estimatedTimePerPatient,
         notes: requestData.notes || "",

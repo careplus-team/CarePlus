@@ -81,31 +81,44 @@ model opdsession {
   created_at              DateTime  @default(now()) @db.Timestamptz(6)
   doctorEmail             String?
   doctorName              String?
-  startTime               DateTime? @db.Time(6)
-  endTime                 DateTime? @db.Time(6)
   numberOfPatientsSlots   Int?
   estimatedTimePerPatient BigInt?
   notes                   String?
   updatedAt               DateTime? @default(now()) @db.Timestamp(6)
+  timeslot                DateTime? @db.Time(6)
 
   @@schema("public")
 }
 
 model channel {
-  id                  BigInt    @id(map: "Channel_pkey") @default(autoincrement())
-  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+  id                  BigInt         @id(map: "Channel_pkey") @default(autoincrement())
+  created_at          DateTime       @default(now()) @db.Timestamptz(6)
   name                String?
   doctorName          String?
   doctorEmail         String?
-  date                DateTime? @db.Date
-  time                DateTime? @db.Time(6)
+  date                DateTime?      @db.Date
+  time                DateTime?      @db.Time(6)
   totalSlots          Int?
-  state               String?   @default("Not Yet Started")
-  roomNumber          Int?      @db.SmallInt
+  state               String?        @default("Not Yet Started")
+  roomNumber          Int?           @db.SmallInt
   estimateWaitingTime Int?
   description         String?
   remainingSlots      Int?
-  currentNumber       Int?      @default(0)
+  currentNumber       Int?           @default(0)
+  appointments        appointments[]
+
+  @@schema("public")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model appointments {
+  id         BigInt   @id @default(autoincrement())
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  channelId  BigInt?
+  userEmail  String?
+  seatNumber Int?     @default(1)
+  note       String?
+  channel    channel? @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "appointments_channelid_fkey")
 
   @@schema("public")
 }
