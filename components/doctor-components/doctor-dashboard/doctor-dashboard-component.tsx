@@ -1,9 +1,30 @@
 "use client";
 
 import React, { useState } from "react";
-import { Calendar, Clock, Users, MapPin, CheckCircle, AlertCircle, Eye, Play, UserCheck } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  Users,
+  MapPin,
+  CheckCircle,
+  AlertCircle,
+  Eye,
+  Play,
+  UserCheck,
+} from "lucide-react";
 
 const DoctorDashboard = () => {
+  type Channel = {
+    id: string;
+    name: string;
+    room: string;
+    date: string;
+    time: string;
+    status: string;
+    description: string;
+    patient_count: number;
+  };
+
   const sampleChannels = [
     {
       id: "1",
@@ -67,9 +88,9 @@ const DoctorDashboard = () => {
     },
   ];
 
-  const [selected, setSelected] = useState(null);
+  const [selected, setSelected] = useState<Channel | any>(null);
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: any) => {
     switch (status) {
       case "confirmed":
         return "bg-green-100 text-green-700 border-green-300";
@@ -82,7 +103,7 @@ const DoctorDashboard = () => {
     }
   };
 
-  const getStatusIcon = (status) => {
+  const getStatusIcon = (status: any) => {
     switch (status) {
       case "confirmed":
         return <CheckCircle className="w-4 h-4 text-green-600" />;
@@ -164,7 +185,7 @@ const DoctorDashboard = () => {
 
                       {/* VIEW BUTTON */}
                       <button
-                        onClick={() => setSelected(ch)}
+                        onClick={() => setSelected(ch as any)}
                         className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
                       >
                         View
@@ -192,7 +213,9 @@ const DoctorDashboard = () => {
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                   <Eye className="w-8 h-8 text-gray-400" />
                 </div>
-                <p className="font-semibold text-gray-600">No channel selected</p>
+                <p className="font-semibold text-gray-600">
+                  No channel selected
+                </p>
                 <p className="text-sm text-gray-400 mt-1">
                   Click "View" in the assigned list
                 </p>
