@@ -7,6 +7,20 @@ export async function POST(request: NextRequest) {
   try {
     // Get the JSON body from the request
     const body = await request.json();
+
+    //check if the doctor email register as normal user
+    const userCheck = await supabaseServer
+      .from("user")
+      .select("*")
+      .eq("email", body.email)
+      .maybeSingle();
+    if (!userCheck.data) {
+      return NextResponse.json({
+        data: null,
+        success: false,
+        message: "Email is not  registered as a user.",
+      });
+    }
     // Insert the doctor details into the "doctor" table
     const doctorDetails = await supabaseServer
       .from("doctor")

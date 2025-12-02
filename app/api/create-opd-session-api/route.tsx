@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
         numberOfPatientsSlots: requestData.numberOfPatientsSlots,
         estimatedTimePerPatient: requestData.estimatedTimePerPatient,
         notes: requestData.notes || "",
+        orginalSlotsCount: requestData.numberOfPatientsSlots,
       })
       .select();
     if (createSessionData.error) {

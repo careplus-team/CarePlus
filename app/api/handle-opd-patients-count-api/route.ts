@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
     const { action } = await req.json();
     const sessionData = await supabaseServer
       .from("opdsession")
-      .select("numberOfPatientsSlots, id")
+      .select("numberOfPatientsSlots, id , orginalSlotsCount")
       .maybeSingle();
 
     if (sessionData.error) {
@@ -24,7 +24,10 @@ export async function POST(req: NextRequest) {
       });
     }
     if (action === "decrement") {
-      if ((sessionData.data?.numberOfPatientsSlots || 0) <= 0) {
+      if (
+        (sessionData.data?.numberOfPatientsSlots || 0) >=
+        sessionData.data?.orginalSlotsCount
+      ) {
         return NextResponse.json({
           data: null,
           success: false,
@@ -34,7 +37,7 @@ export async function POST(req: NextRequest) {
       const updatedSlotsData = await supabaseServer
         .from("opdsession")
         .update({
-          numberOfPatientsSlots: sessionData.data?.numberOfPatientsSlots - 1,
+          numberOfPatientsSlots: sessionData.data?.numberOfPatientsSlots + 1,
         })
         .eq("id", sessionData.data?.id)
         .select("numberOfPatientsSlots , id")
@@ -55,10 +58,18 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "increment") {
+      if (sessionData.data?.numberOfPatientsSlots <= 0) {
+        return NextResponse.json({
+          data: null,
+          success: false,
+          message: "Patients count cannot exceed original slots count",
+        });
+      }
+
       const updatedSlotsData = await supabaseServer
         .from("opdsession")
         .update({
-          numberOfPatientsSlots: sessionData.data?.numberOfPatientsSlots + 1,
+          numberOfPatientsSlots: sessionData.data?.numberOfPatientsSlots - 1,
         })
         .eq("id", sessionData.data?.id)
         .select("numberOfPatientsSlots , id")
