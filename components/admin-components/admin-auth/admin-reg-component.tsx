@@ -1,9 +1,9 @@
 "use client";
 import React, { useEffect, useState, useTransition } from "react";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
-import { Card } from "../ui/card";
+import { Button } from "../../ui/button";
+import { Input } from "../../ui/input";
+import { Label } from "../../ui/label";
+import { Card } from "../../ui/card";
 import axios from "axios";
 import { toast } from "sonner";
 import AdminSecurity from "@/lib/security-walls/admin-security";

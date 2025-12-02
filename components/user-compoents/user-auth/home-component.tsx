@@ -2,7 +2,7 @@
 import { createClient } from "@/lib/supabase/client";
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
-import { Button } from "../ui/button";
+import { Button } from "../../ui/button";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { start } from "node:repl";
@@ -162,7 +162,7 @@ const HomeComponent = () => {
                 {isPending ? (
                   <span className="inline-block animate-pulse bg-gray-300 h-8 w-24 rounded mx-2"></span>
                 ) : (
-                  dbUserInfo?.name
+                  dbUserInfo?.name.toLowerCase()
                 )}
                 ! 👋
               </h2>

@@ -22,10 +22,10 @@ import {
   Clock,
   CheckCircle,
   Star,
-  Sparkles
+  Sparkles,
 } from "lucide-react";
 
-const DoctorLogin = () => {
+const DoctorLoginComponent = () => {
   const supabase = createClient();
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -37,11 +37,15 @@ const DoctorLogin = () => {
   // Check if already logged in
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (user) {
         // Check if user is a doctor
         try {
-          const response = await axios.post("/api/doctor-details-get-api", { email });
+          const response = await axios.post("/api/doctor-details-get-api", {
+            email,
+          });
           if (response.data.success) {
             const doctorProfile = response.data.data;
             console.log("Doctor Profile:", doctorProfile);
@@ -77,7 +81,9 @@ const DoctorLogin = () => {
       }
 
       // Verify doctor status
-      const response = await axios.post("/api/doctor-details-get-api", { email });
+      const response = await axios.post("/api/doctor-details-get-api", {
+        email,
+      });
       if (response.data.success) {
         toast.success("Welcome back, Doctor! 👨‍⚕️", {
           description: "Redirecting to your dashboard...",
@@ -92,7 +98,8 @@ const DoctorLogin = () => {
       } else {
         await supabase.auth.signOut();
         toast.error("Access Denied", {
-          description: "This account is not registered as a doctor. Please contact administration.",
+          description:
+            "This account is not registered as a doctor. Please contact administration.",
           duration: 6000,
         });
       }
@@ -108,29 +115,6 @@ const DoctorLogin = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 relative overflow-hidden">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-indigo-600/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-emerald-400/20 to-teal-600/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-purple-400/10 to-pink-400/10 rounded-full blur-3xl animate-pulse delay-500"></div>
-      </div>
-
-      {/* Floating Medical Icons */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-20 animate-bounce delay-300">
-          <Heart className="w-8 h-8 text-red-400/30" />
-        </div>
-        <div className="absolute top-40 right-32 animate-bounce delay-700">
-          <Activity className="w-6 h-6 text-blue-400/30" />
-        </div>
-        <div className="absolute bottom-32 left-32 animate-bounce delay-1000">
-          <Shield className="w-7 h-7 text-green-400/30" />
-        </div>
-        <div className="absolute bottom-20 right-20 animate-bounce delay-500">
-          <Stethoscope className="w-6 h-6 text-indigo-400/30" />
-        </div>
-      </div>
-
       <div className="relative z-10 flex min-h-screen">
         {/* Left Panel - Hero Section */}
         <div className="hidden lg:flex lg:w-1/2 relative">
@@ -149,7 +133,9 @@ const DoctorLogin = () => {
               <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
                 CarePlus
               </h1>
-              <p className="text-xl text-blue-100 font-medium">Healthcare Excellence at Your Fingertips</p>
+              <p className="text-xl text-blue-100 font-medium">
+                Healthcare Excellence at Your Fingertips
+              </p>
             </div>
 
             {/* Stats Cards */}
@@ -207,7 +193,9 @@ const DoctorLogin = () => {
               <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl mb-4 shadow-lg">
                 <Stethoscope className="w-8 h-8 text-white" />
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">CarePlus</h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                CarePlus
+              </h1>
               <p className="text-gray-600">Doctor Portal</p>
             </div>
 
@@ -218,7 +206,9 @@ const DoctorLogin = () => {
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl mb-6 shadow-lg">
                   <Sparkles className="w-8 h-8 text-white" />
                 </div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h2>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                  Welcome Back
+                </h2>
                 <p className="text-gray-600">Sign in to your doctor account</p>
               </div>
 
@@ -262,7 +252,11 @@ const DoctorLogin = () => {
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
                     >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      {showPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -276,7 +270,9 @@ const DoctorLogin = () => {
                       onChange={(e) => setRememberMe(e.target.checked)}
                       className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                     />
-                    <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                    <span className="ml-2 text-sm text-gray-600">
+                      Remember me
+                    </span>
                   </label>
                   <button
                     type="button"
@@ -314,7 +310,9 @@ const DoctorLogin = () => {
                     <div className="w-full border-t border-gray-200"></div>
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white text-gray-500">New to CarePlus?</span>
+                    <span className="px-4 bg-white text-gray-500">
+                      New to CarePlus?
+                    </span>
                   </div>
                 </div>
               </div>
@@ -343,4 +341,4 @@ const DoctorLogin = () => {
   );
 };
 
-export default DoctorLogin;
+export default DoctorLoginComponent;
