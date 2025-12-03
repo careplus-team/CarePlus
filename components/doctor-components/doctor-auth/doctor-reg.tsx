@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
@@ -50,6 +50,24 @@ function DoctorRegistrationComponent() {
   );
   const client = createClient();
   const router = useRouter();
+
+  //already loggedin user handle
+
+  const alreadyLoggedInUserActionHandle = () => {
+    startTransition(async () => {
+      const userData = await client.auth.getUser();
+      if (userData.data.user) {
+        await client.auth.signOut();
+        toast.error("You are already logged in", {
+          description: "Automatically  sign outed...",
+        });
+      }
+    });
+  };
+
+  useEffect(() => {
+    alreadyLoggedInUserActionHandle();
+  }, []);
   const form = useForm<z.infer<typeof doctorRegistrationSchema>>({
     defaultValues: {
       name: "",
@@ -140,7 +158,7 @@ function DoctorRegistrationComponent() {
             },
           });
           setTimeout(() => {
-            router.push("doctor/login");
+            router.push("doctor/doctor-login");
           }, 5000);
         }
       }
@@ -582,7 +600,7 @@ function DoctorRegistrationComponent() {
           <p className="text-center text-gray-600 mt-8">
             Already registered?{" "}
             <a
-              href="/doctor/login"
+              href="/doctor/doctor-login"
               className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
             >
               Sign in here

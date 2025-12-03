@@ -32,35 +32,44 @@ const DoctorLoginComponent = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [initChecked, setInitChecked] = useState(true);
+
+  const checkAuth = async () => {
+    console.log("Checking auth session");
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    console.log("Current user:", user);
+    if (user) {
+      // Check if user is a doctor
+      try {
+        const response = await axios.post("/api/doctor-details-get-api", {
+          email: user.email,
+        });
+        console.log("Auth check response:", response);
+        if (response.data.success) {
+          const doctorProfile = response.data.data;
+          console.log("Doctor Profile:", doctorProfile);
+          router.push("/doctor/doctor-dashboard");
+          console.log("user is a doctor, redirecting to dashboard");
+        }
+      } catch (error) {
+        // User is logged in but not a doctor, sign out
+        await supabase.auth.signOut();
+      }
+    }
+    setInitChecked(false);
+  };
 
   // Check if already logged in
   useEffect(() => {
-    const checkAuth = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        // Check if user is a doctor
-        try {
-          const response = await axios.post("/api/doctor-details-get-api", {
-            email,
-          });
-          if (response.data.success) {
-            const doctorProfile = response.data.data;
-            console.log("Doctor Profile:", doctorProfile);
-            //router.push("/doctor/dashboard");
-            console.log("user is a doctor, redirecting to dashboard");
-          }
-        } catch (error) {
-          // User is logged in but not a doctor, sign out
-          await supabase.auth.signOut();
-        }
-      }
-    };
+    console.log("Checking existing auth session");
+
     checkAuth();
   }, []);
 
+  //handle login form submission
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -92,7 +101,7 @@ const DoctorLoginComponent = () => {
 
         // Add a small delay for better UX
         setTimeout(() => {
-          //router.push("/doctor/dashboard");
+          router.push("/doctor/doctor-dashboard");
           console.log("redirecting to doctor dashboard");
         }, 1500);
       } else {
@@ -222,6 +231,7 @@ const DoctorLoginComponent = () => {
                   </label>
                   <div className="relative">
                     <Input
+                      disabled={initChecked || loading}
                       type="email"
                       placeholder="doctor@careplus.com"
                       value={email}
@@ -240,6 +250,7 @@ const DoctorLoginComponent = () => {
                   </label>
                   <div className="relative">
                     <Input
+                      disabled={initChecked || loading}
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
                       value={password}
@@ -263,17 +274,6 @@ const DoctorLoginComponent = () => {
 
                 {/* Remember Me & Forgot Password */}
                 <div className="flex items-center justify-between">
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                    />
-                    <span className="ml-2 text-sm text-gray-600">
-                      Remember me
-                    </span>
-                  </label>
                   <button
                     type="button"
                     className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
@@ -286,10 +286,15 @@ const DoctorLoginComponent = () => {
                 {/* Login Button */}
                 <Button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || initChecked}
                   className="w-full h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
-                  {loading ? (
+                  {initChecked ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                      Checking Session...
+                    </div>
+                  ) : loading ? (
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
                       Signing In...
@@ -320,7 +325,7 @@ const DoctorLoginComponent = () => {
               {/* Register Link */}
               <div className="text-center">
                 <button
-                  onClick={() => router.push("/doctor/signup")}
+                  onClick={() => router.push("/doctor/doctor-registration")}
                   className="text-blue-600 hover:text-blue-800 font-semibold transition-colors"
                 >
                   Register as a Doctor →
