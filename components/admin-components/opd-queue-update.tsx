@@ -13,11 +13,13 @@ import {
   Stethoscope,
   Play,
   Trash2,
+  CircleCheckBig,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { toast } from "sonner";
 import LoadingUI from "@/lib/UI-helpers/loading-ui";
+import Image from "next/image";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +31,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { createClient } from "@/lib/supabase/client";
+import { set } from "zod";
+import { Button } from "../ui/button";
 
 // Type definition for the data passed from the previous screen
 interface SessionData {
@@ -60,6 +64,9 @@ export default function OPDUpdateQueue() {
   const [updateTrigger, setUpdateTrigger] = useState<boolean>(false);
   const [sessionStarted, setSessionStarted] = useState(true);
   const [initialLoad, setInitialLoad] = useState(true);
+  const [profilePhoto, setProfilePhoto] = useState<string>(
+    "doctor-default-avatar.png"
+  );
 
   //get current state of OPD Session from database
   const loadSessionState = () => {
@@ -67,6 +74,14 @@ export default function OPDUpdateQueue() {
       const doctorDetails = await supabaseClient.auth.getUser();
       console.log("Doctor details:", doctorDetails);
       const sessionData = await axios.post("/api/get-opd-session-api");
+      const doctorInfoFromDb = await axios.post("/api/doctor-details-get-api", {
+        email: doctorDetails.data.user?.email,
+      });
+      console.log("Doctor info data:", doctorInfoFromDb.data);
+      setProfilePhoto(
+        doctorInfoFromDb.data.data.profilePicture ||
+          "/doctor-default-avatar.png"
+      );
       console.log("Fetched session data:", sessionData.data);
       if (
         doctorDetails.data.user?.email !== sessionData.data.data[0]?.doctorEmail
@@ -178,7 +193,7 @@ export default function OPDUpdateQueue() {
     isOpen: boolean;
     title: string;
     message: string;
-    type: "start" | "end";
+    type: "start" | "end" | "reset";
     onConfirm: () => void;
   }>({
     isOpen: false,
@@ -210,6 +225,17 @@ export default function OPDUpdateQueue() {
     });
   };
 
+  const triggerResetQueue = () => {
+    setConfirmation({
+      isOpen: true,
+      title: "Reset OPD Queue?",
+      message:
+        "This will reset the patient count to the original capacity. Current progress will be lost. Are you sure?",
+      type: "reset",
+      onConfirm: handleResetQueue,
+    });
+  };
+
   //handle start session
   const handleStartSession = async () => {
     if (!sessionDataPool || !sessionDataPool.doctorEmail) return;
@@ -231,14 +257,14 @@ export default function OPDUpdateQueue() {
     }
     setSessionStarted(true);
   };
-
+  //handle end session
   const handleEndSession = async () => {
     try {
       setInitialLoad(true);
       const endResult = await axios.post("/api/delete-opd-session-api");
       if (endResult.data.success) {
         toast.success("OPD Session ended successfully.");
-        router.push("/home");
+        router.push("/doctor/doctor-dashboard");
       } else {
         toast.error("Error ending OPD Session: " + endResult.data.message);
         return;
@@ -248,12 +274,35 @@ export default function OPDUpdateQueue() {
       return;
     }
   };
+  //handle reset queue
+  const handleResetQueue = async () => {
+    if (!sessionDataPool) return;
+    try {
+      setInitialLoad(true);
+      const resetResult = await axios.post("/api/reset-opd-queue-api", {
+        orginaPatientSlots: sessionDataPool.orginalSlotsCount,
+        doctorEmail: sessionDataPool.doctorEmail,
+      });
+      if (resetResult.data.success) {
+        toast.success("OPD Queue reset successfully.");
+        setUpdateTrigger((prev) => !prev);
+      } else {
+        toast.error("Error resetting OPD Queue: " + resetResult.data.message);
+        return;
+      }
+    } catch (e) {
+      toast.error("Error resetting OPD Queue.");
+      return;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-indigo-50/30 font-sans text-slate-800 relative overflow-hidden flex flex-col items-center justify-center">
       {/* CarePlus Title - Fixed Top Left */}
-      <div className="absolute top-6 left-6 z-20">
-        <h1 className="text-2xl font-bold text-emerald-600">CarePlus</h1>
+      <div className=" absolute top-4 left-4 ">
+        <p className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500  to-green-500 font-bold  text-2xl">
+          <a href="/">CarePlus</a>
+        </p>
       </div>
 
       {/* Background Decor */}
@@ -331,8 +380,14 @@ export default function OPDUpdateQueue() {
             <div className="bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-5">
                 <div className="relative">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-indigo-200">
-                    {/*sessionData.avatar*/}
+                  <div className="w-16 h-16 overflow-hidden  rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-indigo-200">
+                    <Image
+                      className=""
+                      src={profilePhoto}
+                      alt="Doctor Avatar"
+                      width={64}
+                      height={64}
+                    />
                   </div>
                   <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-md">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 fill-current" />
@@ -353,16 +408,6 @@ export default function OPDUpdateQueue() {
                   </div>
                 </div>
               </div>
-              <button
-                onClick={() => setIsSystemActive(!isSystemActive)}
-                className={`p-3 rounded-xl transition-all ${
-                  isSystemActive
-                    ? "bg-emerald-50 text-emerald-600"
-                    : "bg-slate-100 text-slate-400"
-                }`}
-              >
-                <Activity className="w-6 h-6" />
-              </button>
             </div>
 
             {/* Dashboard Controls */}
@@ -442,57 +487,68 @@ export default function OPDUpdateQueue() {
                     </h3>
                     <button
                       disabled={isUpdating}
-                      //onClick={() => setCurrentQueue(0)}
+                      onClick={triggerResetQueue}
                       className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full hover:bg-emerald-100 transition-colors"
                     >
                       RESET
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-6">
-                    <button
-                      onClick={() => updateQueueState("decrement")}
-                      disabled={
-                        !sessionStarted ||
-                        Number(numberOfSlots) >=
-                          Number(sessionDataPool?.orginalSlotsCount) ||
-                        isUpdating
-                      }
-                      className={`w-20 h-20 rounded-2xl bg-white border-2 border-slate-100 flex items-center justify-center transition-all shadow-sm ${
-                        !sessionStarted ||
-                        Number(numberOfSlots) >=
-                          Number(sessionDataPool?.orginalSlotsCount) ||
-                        isUpdating
-                          ? "opacity-50 cursor-not-allowed text-slate-300"
-                          : "text-slate-400 hover:text-slate-600 hover:bg-slate-50 active:scale-95"
-                      }`}
-                    >
-                      <Minus className="w-8 h-8" />
-                    </button>
+                  <div className="flex flex-col items-center gap-6">
+                    <div className="flex items-center gap-6">
+                      <button
+                        onClick={() => updateQueueState("decrement")}
+                        disabled={
+                          !sessionStarted ||
+                          Number(numberOfSlots) >=
+                            Number(sessionDataPool?.orginalSlotsCount) ||
+                          isUpdating
+                        }
+                        className={`w-20 h-20 rounded-2xl bg-white border-2 border-slate-100 flex items-center justify-center transition-all shadow-sm ${
+                          !sessionStarted ||
+                          Number(numberOfSlots) >=
+                            Number(sessionDataPool?.orginalSlotsCount) ||
+                          isUpdating
+                            ? "opacity-50 cursor-not-allowed text-slate-300"
+                            : "text-slate-400 hover:text-slate-600 hover:bg-slate-50 active:scale-95"
+                        }`}
+                      >
+                        <Minus className="w-8 h-8" />
+                      </button>
 
-                    <div className="flex-1 h-20 bg-white border-2 border-slate-100 rounded-2xl flex items-center justify-center shadow-inner relative overflow-hidden">
-                      <span className="text-xl font-medium text-slate-500">
-                        Current
-                      </span>
+                      <div className="flex-1 h-20 bg-white border-2 border-slate-100 rounded-2xl flex items-center justify-center shadow-inner relative overflow-hidden">
+                        <span className="text-xl font-medium text-slate-500 px-5">
+                          OPD
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={() => updateQueueState("increment")}
+                        disabled={
+                          !sessionStarted ||
+                          Number(numberOfSlots) <= 0 ||
+                          isUpdating
+                        }
+                        className={`w-20 h-20 rounded-2xl bg-emerald-600 text-white shadow-xl shadow-emerald-200 flex items-center justify-center transition-all ${
+                          !sessionStarted ||
+                          Number(numberOfSlots) <= 0 ||
+                          isUpdating
+                            ? "opacity-50 cursor-not-allowed"
+                            : "active:scale-95 hover:bg-emerald-700"
+                        } disabled:opacity-50`}
+                      >
+                        <Plus className="w-10 h-10" />
+                      </button>
                     </div>
-
-                    <button
-                      onClick={() => updateQueueState("increment")}
-                      disabled={
-                        !sessionStarted ||
-                        Number(numberOfSlots) <= 0 ||
-                        isUpdating
-                      }
-                      className={`w-20 h-20 rounded-2xl bg-emerald-600 text-white shadow-xl shadow-emerald-200 flex items-center justify-center transition-all ${
-                        !sessionStarted ||
-                        Number(numberOfSlots) <= 0 ||
-                        isUpdating
-                          ? "opacity-50 cursor-not-allowed"
-                          : "active:scale-95 hover:bg-emerald-700"
-                      } disabled:opacity-50`}
+                    <Button
+                      className={`${
+                        Number(numberOfSlots) === 0 ? "flex" : "hidden"
+                      } bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-full shadow-lg shadow-green-200 transition-all`}
+                      onClick={triggerEndSession}
                     >
-                      <Plus className="w-10 h-10" />
-                    </button>
+                      <CircleCheckBig />
+                      End Session
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -521,7 +577,7 @@ export default function OPDUpdateQueue() {
                 setConfirmation((prev) => ({ ...prev, isOpen: false }));
               }}
               className={
-                confirmation.type === "end"
+                confirmation.type === "end" || confirmation.type === "reset"
                   ? "bg-red-600 hover:bg-red-700"
                   : "bg-emerald-600 hover:bg-emerald-700"
               }
