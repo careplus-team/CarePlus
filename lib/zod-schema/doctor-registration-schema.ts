@@ -18,10 +18,12 @@ export const doctorRegistrationSchema = z
     currentWorkplace: z.string().min(1, "Current Workplace is required"),
     bio: z.string().min(1, "Bio is required"),
     profilePicture: z.string().optional(),
+    OPD: z.boolean().default(false).optional(),
     password: z.string().min(6, "Password must be at least 6 characters"),
     confirmPassword: z
       .string()
       .min(6, "Confirm Password must be at least 6 characters"),
+    opd: z.boolean().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",

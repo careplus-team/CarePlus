@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
       currentWorkplace,
       bio,
       profilePicture,
+      opd,
     } = await req.json();
 
     const { data: existingDoctor, error: fetchError } = await supabaseServer
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
           bio,
           profilePicture: profilePicture || "/doctor-default.jpg",
           verification: false,
-          OPD: false,
+          OPD: opd || false,
         },
       ])
       .select("*")

@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { createClient } from "@/lib/supabase/client";
 
 import {
@@ -83,6 +84,7 @@ function DoctorRegistrationComponent() {
       confirmPassword: "",
       bio: "",
       profilePicture: "",
+      OPD: false,
     },
   });
   const [profilePic, setProfilePic] = useState("/temp_user.webp");
@@ -524,6 +526,29 @@ function DoctorRegistrationComponent() {
                           />
                         </FormControl>
                         <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="OPD"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-xl border border-gray-200 p-4 md:col-span-2">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="text-sm font-semibold text-gray-700">
+                            OPD Services
+                          </FormLabel>
+                          <p className="text-sm text-gray-500">
+                            Check this box if you will be providing Outpatient
+                            Department (OPD) services.
+                          </p>
+                        </div>
                       </FormItem>
                     )}
                   />
