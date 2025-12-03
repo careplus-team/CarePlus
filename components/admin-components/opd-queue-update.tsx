@@ -121,14 +121,17 @@ export default function OPDUpdateQueue() {
       const currentSlots = Number(numberOfSlots);
       const maxSlots = Number(sessionDataPool.orginalSlotsCount);
 
-      if (action === "decrement" && currentSlots >= maxSlots) {
-        console.log("No slots available to decrement.");
-        toast.error("No slots available to decrement.");
-        return;
-      }
-      if (action === "increment" && currentSlots <= 0) {
+      if (
+        action === "increment" &&
+        currentSlots >= (sessionDataPool.lastIssuedToken || 0)
+      ) {
         console.log("No slots available to increment.");
         toast.error("No slots available to increment.");
+        return;
+      }
+      if (action === "decrement" && currentSlots <= 0) {
+        console.log("No slots available to decrement.");
+        toast.error("No slots available to decrement.");
         return;
       }
 
@@ -182,10 +185,37 @@ export default function OPDUpdateQueue() {
 
   // Color helpers
   const getRingColor = () => {
-    if (progressPercentage < 50) return "text-emerald-500";
-    if (progressPercentage < 80) return "text-amber-500";
+    if (progressPercentage > 50) return "text-emerald-500";
+    if (progressPercentage > 20) return "text-amber-500";
     return "text-rose-500";
   };
+
+  // Realtime subscription for session updates
+  useEffect(() => {
+    if (!sessionDataPool?.id) return;
+
+    const channel = supabaseClient
+      .channel(`opd-session-${sessionDataPool.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "opdsession",
+          filter: `id=eq.${sessionDataPool.id}`,
+        },
+        (payload) => {
+          console.log("Realtime update received:", payload.new);
+          setSessionDataPool(payload.new);
+          setNumberOfSlots(payload.new.numberOfPatientsSlots);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabaseClient.removeChannel(channel);
+    };
+  }, [sessionDataPool?.id]);
 
   const [startingSession, setStartingSession] = useState(false);
 
@@ -453,16 +483,10 @@ export default function OPDUpdateQueue() {
                   {/* Center Data */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
                     <span className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">
-                      Token No
+                      Current Token
                     </span>
                     <div className="text-8xl md:text-9xl font-bold text-slate-800 tracking-tighter tabular-nums leading-none">
-                      {Number(numberOfSlots) === 0
-                        ? "Full"
-                        : sessionDataPool
-                        ? Number(sessionDataPool?.orginalSlotsCount) -
-                          Number(numberOfSlots) +
-                          1
-                        : "--"}
+                      {Number(numberOfSlots)}
                     </div>
                     <div className="mt-4 flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-1.5 rounded-full border border-slate-100 shadow-sm">
                       <div
@@ -471,7 +495,7 @@ export default function OPDUpdateQueue() {
                         }`}
                       />
                       <span className="text-sm font-semibold text-slate-600">
-                        {Number(numberOfSlots)} Remaining
+                        Last Issued: {sessionDataPool?.lastIssuedToken || 0}
                       </span>
                     </div>
                   </div>
@@ -500,14 +524,12 @@ export default function OPDUpdateQueue() {
                         onClick={() => updateQueueState("decrement")}
                         disabled={
                           !sessionStarted ||
-                          Number(numberOfSlots) >=
-                            Number(sessionDataPool?.orginalSlotsCount) ||
+                          Number(numberOfSlots) <= 0 ||
                           isUpdating
                         }
                         className={`w-20 h-20 rounded-2xl bg-white border-2 border-slate-100 flex items-center justify-center transition-all shadow-sm ${
                           !sessionStarted ||
-                          Number(numberOfSlots) >=
-                            Number(sessionDataPool?.orginalSlotsCount) ||
+                          Number(numberOfSlots) <= 0 ||
                           isUpdating
                             ? "opacity-50 cursor-not-allowed text-slate-300"
                             : "text-slate-400 hover:text-slate-600 hover:bg-slate-50 active:scale-95"
@@ -526,12 +548,14 @@ export default function OPDUpdateQueue() {
                         onClick={() => updateQueueState("increment")}
                         disabled={
                           !sessionStarted ||
-                          Number(numberOfSlots) <= 0 ||
+                          Number(numberOfSlots) >=
+                            (sessionDataPool?.lastIssuedToken || 0) ||
                           isUpdating
                         }
                         className={`w-20 h-20 rounded-2xl bg-emerald-600 text-white shadow-xl shadow-emerald-200 flex items-center justify-center transition-all ${
                           !sessionStarted ||
-                          Number(numberOfSlots) <= 0 ||
+                          Number(numberOfSlots) >=
+                            (sessionDataPool?.lastIssuedToken || 0) ||
                           isUpdating
                             ? "opacity-50 cursor-not-allowed"
                             : "active:scale-95 hover:bg-emerald-700"

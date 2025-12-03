@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
     const { action } = await req.json();
     const sessionData = await supabaseServer
       .from("opdsession")
-      .select("numberOfPatientsSlots, id , orginalSlotsCount")
+      .select("numberOfPatientsSlots, id , orginalSlotsCount, lastIssuedToken")
       .maybeSingle();
 
     if (sessionData.error) {
@@ -23,15 +23,15 @@ export async function POST(req: NextRequest) {
         message: "No OPD session found",
       });
     }
-    if (action === "decrement") {
+    if (action === "increment") {
       if (
         (sessionData.data?.numberOfPatientsSlots || 0) >=
-        sessionData.data?.orginalSlotsCount
+        (sessionData.data?.lastIssuedToken || 0)
       ) {
         return NextResponse.json({
           data: null,
           success: false,
-          message: "No patients available",
+          message: "Cannot proceed. No more patients in queue.",
         });
       }
       const updatedSlotsData = await supabaseServer
@@ -53,16 +53,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         data: updatedSlotsData.data,
         success: true,
-        message: "Patients count decremented successfully",
+        message: "Patients count incremented successfully",
       });
     }
 
-    if (action === "increment") {
+    if (action === "decrement") {
       if (sessionData.data?.numberOfPatientsSlots <= 0) {
         return NextResponse.json({
           data: null,
           success: false,
-          message: "Patients count cannot exceed original slots count",
+          message: "Patients count cannot be less than 0",
         });
       }
 
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         data: updatedSlotsData.data,
         success: true,
-        message: "Patients count incremented successfully",
+        message: "Patients count decremented successfully",
       });
     }
 
