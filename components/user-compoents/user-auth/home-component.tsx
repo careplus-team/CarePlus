@@ -114,8 +114,20 @@ const HomeComponent = () => {
         .from("user")
         .select("*")
         .eq("email", email);
-      setDbUserInfo(dbUserInfo.data ? dbUserInfo.data[0] : null);
-      console.log(dbUserInfo);
+      if (dbUserInfo.data) {
+        if (dbUserInfo.data?.length <= 0) {
+          const doctorInfor = await axios.post("/api/doctor-details-get-api", {
+            email,
+          });
+          setDbUserInfo(doctorInfor.data.data);
+        } else {
+          setDbUserInfo(dbUserInfo.data ? dbUserInfo.data[0] : null);
+          console.log(dbUserInfo);
+        }
+      } else {
+        toast.error("Error fetching user data from database");
+        return;
+      }
     });
   };
 
@@ -123,8 +135,9 @@ const HomeComponent = () => {
     startTransition(async () => {
       const client = createClient();
       const userAuthInfo = await client.auth.getClaims();
+      console.log("user auth info", userAuthInfo);
       setUserInfo(userAuthInfo);
-      console.log("haree1");
+
       if (userAuthInfo?.data?.claims?.email != null) {
         console.log("hree", userAuthInfo?.data?.claims?.email);
         getUserInfoFromDb(userAuthInfo?.data?.claims?.email);

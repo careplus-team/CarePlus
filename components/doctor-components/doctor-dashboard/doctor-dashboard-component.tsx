@@ -548,7 +548,7 @@ const DoctorDashboard = () => {
             </div>
           ) : (
             <div>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 border border-5 mb-5 rounded-3xl p-5  shadow-lg bg-white/60 backdrop-blur-sm">
                 {/* LEFT SECTION - ASSIGNED CHANNELS */}
                 <div className="lg:col-span-2 space-y-6">
                   <div className="bg-white rounded-3xl shadow-xl border p-8">
@@ -560,64 +560,71 @@ const DoctorDashboard = () => {
                     </p>
 
                     <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
-                      {channelData.map((ch: any) => (
-                        <div
-                          key={ch.id}
-                          className="p-5 bg-white border rounded-2xl shadow-sm hover:shadow-md transition"
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h3 className="font-bold text-gray-800 text-lg">
-                                {ch.name}
-                              </h3>
+                      {channelData.length > 0 ? (
+                        channelData.map((ch: any) => (
+                          <div
+                            key={ch.id}
+                            className="p-5 bg-white border rounded-2xl shadow-sm hover:shadow-md transition"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h3 className="font-bold text-gray-800 text-lg">
+                                  {ch.name}
+                                </h3>
 
-                              <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
-                                <div className="flex items-center space-x-1">
-                                  <MapPin className="w-4 h-4" />
-                                  <span>Room {ch.roomNumber}</span>
+                                <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
+                                  <div className="flex items-center space-x-1">
+                                    <MapPin className="w-4 h-4" />
+                                    <span>Room {ch.roomNumber}</span>
+                                  </div>
+                                  <div className="flex items-center space-x-1">
+                                    <Calendar className="w-4 h-4" />
+                                    <span>{ch.date}</span>
+                                  </div>
+                                  <div className="flex items-center space-x-1">
+                                    <Clock className="w-4 h-4" />
+                                    <span>{ch.time}</span>
+                                  </div>
                                 </div>
-                                <div className="flex items-center space-x-1">
-                                  <Calendar className="w-4 h-4" />
-                                  <span>{ch.date}</span>
-                                </div>
-                                <div className="flex items-center space-x-1">
-                                  <Clock className="w-4 h-4" />
-                                  <span>{ch.time}</span>
-                                </div>
+
+                                <p className="text-sm text-gray-500 mt-2">
+                                  {ch.description}
+                                </p>
                               </div>
 
-                              <p className="text-sm text-gray-500 mt-2">
-                                {ch.description}
-                              </p>
-                            </div>
+                              {/* STATUS + PATIENT COUNT */}
+                              <div className="flex flex-col items-end">
+                                <div
+                                  className={`px-3 py-1 text-xs rounded-full border flex items-center space-x-1 ${
+                                    ch.state === "active"
+                                      ? getStatusColor("active")
+                                      : getStatusColor("inactive")
+                                  }`}
+                                >
+                                  <span className="capitalize">{ch.state}</span>
+                                </div>
 
-                            {/* STATUS + PATIENT COUNT */}
-                            <div className="flex flex-col items-end">
-                              <div
-                                className={`px-3 py-1 text-xs rounded-full border flex items-center space-x-1 ${getStatusColor(
-                                  ch.status
-                                )}`}
-                              >
-                                {getStatusIcon(ch.state)}
-                                <span className="capitalize">{ch.state}</span>
+                                <p className="text-2xl font-bold text-gray-800 mt-3">
+                                  {ch.totalSlots - ch.remainingSlots}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Patients
+                                </p>
+
+                                {/* VIEW BUTTON */}
+                                <button
+                                  onClick={() => setSelected(ch as any)}
+                                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
+                                >
+                                  View
+                                </button>
                               </div>
-
-                              <p className="text-2xl font-bold text-gray-800 mt-3">
-                                {ch.totalSlots - ch.remainingSlots}
-                              </p>
-                              <p className="text-xs text-gray-500">Patients</p>
-
-                              {/* VIEW BUTTON */}
-                              <button
-                                onClick={() => setSelected(ch as any)}
-                                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
-                              >
-                                View
-                              </button>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))
+                      ) : (
+                        <p className="text-gray-500">No channels assigned.</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -625,11 +632,20 @@ const DoctorDashboard = () => {
                 {/* RIGHT SECTION - DETAILS */}
                 <div>
                   <div className="bg-white rounded-3xl shadow-xl border p-8 min-h-[400px]">
-                    <div className="flex items-center space-x-2 mb-6">
-                      <Eye className="w-6 h-6 text-blue-600" />
-                      <h3 className="text-xl font-bold text-gray-800">
-                        Channel Details
-                      </h3>
+                    <div className="flex justify-between items-center space-x-2 mb-6">
+                      <div className="flex space-x-2">
+                        <Eye className="w-6 h-6 text-blue-600" />
+                        <h3 className="text-xl font-bold text-gray-800">
+                          Channel Details
+                        </h3>
+                      </div>
+                      <Button
+                        disabled={!selected}
+                        className="bg-transparent hover:bg-red-100 p-2 rounded-full transition"
+                        onClick={() => setSelected(null)}
+                      >
+                        <ArrowDownLeftFromCircle className="text-red-500 size-5 font-extrabold" />
+                      </Button>
                     </div>
 
                     {!selected ? (
@@ -714,13 +730,8 @@ const DoctorDashboard = () => {
                             <span>Start Consultation</span>
                           </button>
 
-                          <div className="grid grid-cols-2 gap-3">
-                            <button className="flex items-center justify-center space-x-2 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50">
-                              <CheckCircle className="w-4 h-4" />
-                              <span>Mark Complete</span>
-                            </button>
-
-                            <button className="flex items-center justify-center space-x-2 px-4 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700">
+                          <div className="">
+                            <button className="flex w-full items-center justify-center space-x-2 px-4 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700">
                               <UserCheck className="w-4 h-4" />
                               <span>Show Patients</span>
                             </button>
