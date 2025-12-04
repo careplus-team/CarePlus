@@ -195,8 +195,6 @@ const AdminReg = () => {
                         <p className="text-xs text-amber-700">
                           Only promote trusted users who have demonstrated
                           responsibility and understanding of system operations.
-                          Admin access cannot be easily revoked and requires
-                          database intervention.
                         </p>
                       </div>
                     </div>
