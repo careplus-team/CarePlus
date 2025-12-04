@@ -284,7 +284,7 @@ export default function OPDUpdateQueue() {
       toast.error("Error starting OPD Session.");
       return;
     }
-    setSessionStarted(true);
+    setSessionStarted(false);
   };
   //handle end session
   const handleEndSession = async () => {
