@@ -8,8 +8,6 @@ export async function POST(req: NextRequest) {
       .from("opdsession")
       .update({
         started: true,
-        numberOfPatientsSlots: 0,
-        lastIssuedToken: 0,
       })
       .eq("doctorEmail", doctorEmail)
       .select("*")
