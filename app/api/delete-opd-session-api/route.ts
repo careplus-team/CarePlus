@@ -42,6 +42,20 @@ export async function POST() {
         message: deleteResponse.error.message,
       });
     }
+
+    const deleteBookingData = await supabaseServer
+      .from("opd_booking")
+      .delete()
+      .eq("sessionId", getCurrentSession.data?.id);
+
+    if (deleteBookingData.error) {
+      return NextResponse.json({
+        data: null,
+        success: false,
+        message: deleteBookingData.error.message,
+      });
+    }
+
     // Return success response upon successful deletion
     return NextResponse.json({
       data: deleteResponse.data,
