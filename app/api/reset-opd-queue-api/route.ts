@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   try {
     const resetData = await supabaseServer
       .from("opdsession")
-      .update({ numberOfPatientsSlots: orginaPatientSlots })
+      .update({ numberOfPatientsSlots: 0 })
       .eq("doctorEmail", doctorEmail)
       .select("*")
       .maybeSingle();
