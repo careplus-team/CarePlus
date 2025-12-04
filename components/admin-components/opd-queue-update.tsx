@@ -178,8 +178,7 @@ export default function OPDUpdateQueue() {
     : Number(numberOfSlots);
   const progressPercentage = Math.min(
     100,
-    ((Number(sessionDataPool?.orginalSlotsCount || 1) - Number(numberOfSlots)) /
-      Number(sessionDataPool?.orginalSlotsCount || 1)) *
+    (Number(numberOfSlots) / Number(sessionDataPool?.orginalSlotsCount || 1)) *
       100
   );
 

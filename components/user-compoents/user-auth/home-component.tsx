@@ -182,13 +182,13 @@ const HomeComponent = () => {
   const fetchUserInfoFromAuth = () => {
     startTransition(async () => {
       const client = createClient();
-      const userAuthInfo = await client.auth.getClaims();
-      console.log("user auth info", userAuthInfo);
-      setUserInfo(userAuthInfo);
+      const { data, error } = await client.auth.getUser();
+      console.log("user auth info", data);
+      setUserInfo(data.user);
 
-      if (userAuthInfo?.data?.claims?.email != null) {
-        console.log("hree", userAuthInfo?.data?.claims?.email);
-        getUserInfoFromDb(userAuthInfo?.data?.claims?.email);
+      if (data?.user?.email != null) {
+        console.log("hree", data.user.email);
+        getUserInfoFromDb(data.user.email);
       }
     });
   };
@@ -218,7 +218,7 @@ const HomeComponent = () => {
     startBookingTransition(async () => {
       try {
         const response = await axios.post("/api/opd-booking-by-user-api", {
-          userEmail: userInfo?.data?.claims?.email,
+          userEmail: userInfo?.email,
           sessionId: opdSessionData.id,
         });
         if (response.data.success) {
@@ -236,22 +236,25 @@ const HomeComponent = () => {
 
   //check is OPD session laready booked
   const [isAlreadyBooked, setIsAlreadyBooked] = useState(false);
+  const [userBooking, setUserBooking] = useState<any>(null);
   const [isPendingAlraedyBooked, startTransitionAlreadyBooked] =
     useTransition();
 
   const checkUserAlreadyBookedOPD = async () => {
-    if (userInfo?.data?.claims?.email == null || opdSessionData == null) {
+    if (userInfo?.email == null || opdSessionData == null) {
       return;
     }
     startTransitionAlreadyBooked(async () => {
       const response = await axios.post("/api/check-already-booked-opd-api", {
-        email: userInfo?.data?.claims?.email,
+        email: userInfo?.email,
       });
       if (response.data.success && response.data.data.length > 0) {
         console.log("already booked data", response.data.data);
         setIsAlreadyBooked(true);
+        setUserBooking(response.data.data[0]);
       } else {
         setIsAlreadyBooked(false);
+        setUserBooking(null);
       }
     });
   };
@@ -396,29 +399,96 @@ const HomeComponent = () => {
                         </span>
                       </div>
                       <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
-                        <span className="text-gray-600">In Room</span>
+                        <span className="text-gray-600">Current Token</span>
                         <span className="font-bold text-orange-600">
                           {opdSessionData?.numberOfPatientsSlots || "0"}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                        <span className="text-gray-600">
-                          Next Available Token
-                        </span>
-                        <span className="font-bold text-green-600">
-                          {(opdSessionData?.lastIssuedToken || 0) + 1}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
-                        <span className="text-gray-600">Est. Wait Time</span>
-                        <span className="font-bold text-purple-600">
-                          {((opdSessionData?.lastIssuedToken || 0) +
-                            1 -
-                            opdSessionData?.numberOfPatientsSlots) *
-                            (opdSessionData?.estimatedTimePerPatient || 0) +
-                            " minutes" || "Loading..."}
-                        </span>
-                      </div>
+
+                      {userBooking ? (
+                        <>
+                          <div className="flex justify-between items-center p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+                            <span className="text-gray-600 font-medium">
+                              Your Token
+                            </span>
+                            <span className="font-bold text-indigo-600 text-lg">
+                              {userBooking.bookingNumber}
+                            </span>
+                          </div>
+
+                          <div
+                            className={`flex justify-between items-center p-3 rounded-lg border ${
+                              Number(opdSessionData?.numberOfPatientsSlots) ===
+                              Number(userBooking.bookingNumber)
+                                ? "bg-green-50 border-green-200"
+                                : Number(
+                                    opdSessionData?.numberOfPatientsSlots
+                                  ) > Number(userBooking.bookingNumber)
+                                ? "bg-red-50 border-red-200"
+                                : "bg-purple-50 border-purple-200"
+                            }`}
+                          >
+                            <span className="text-gray-600 font-medium">
+                              Status
+                            </span>
+                            <span
+                              className={`font-bold ${
+                                Number(
+                                  opdSessionData?.numberOfPatientsSlots
+                                ) === Number(userBooking.bookingNumber)
+                                  ? "text-green-600 animate-pulse"
+                                  : Number(
+                                      opdSessionData?.numberOfPatientsSlots
+                                    ) > Number(userBooking.bookingNumber)
+                                  ? "text-red-600"
+                                  : "text-purple-600"
+                              }`}
+                            >
+                              {Number(opdSessionData?.numberOfPatientsSlots) ===
+                              Number(userBooking.bookingNumber)
+                                ? "It's Your Turn!"
+                                : Number(
+                                    opdSessionData?.numberOfPatientsSlots
+                                  ) > Number(userBooking.bookingNumber)
+                                ? "Your Turn Passed"
+                                : `${
+                                    (Number(userBooking.bookingNumber) -
+                                      Number(
+                                        opdSessionData?.numberOfPatientsSlots
+                                      )) *
+                                      Number(
+                                        opdSessionData?.estimatedTimePerPatient ||
+                                          5
+                                      ) +
+                                    " mins wait"
+                                  }`}
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                            <span className="text-gray-600">
+                              Next Available Token
+                            </span>
+                            <span className="font-bold text-green-600">
+                              {(opdSessionData?.lastIssuedToken || 0) + 1}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
+                            <span className="text-gray-600">
+                              Est. Wait Time
+                            </span>
+                            <span className="font-bold text-purple-600">
+                              {((opdSessionData?.lastIssuedToken || 0) +
+                                1 -
+                                opdSessionData?.numberOfPatientsSlots) *
+                                (opdSessionData?.estimatedTimePerPatient || 0) +
+                                " minutes" || "Loading..."}
+                            </span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
 
