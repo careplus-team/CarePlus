@@ -1,15 +1,12 @@
-import { NextResponse, NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/admin";
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
-    // Get doctorEmail from the request body
-    const { doctorEmail } = await request.json();
-    // Fetch channel list for the given doctorEmail
     const channelListData = await supabaseServer
       .from("channel")
       .select("*")
-      .eq("doctorEmail", doctorEmail)
+
       .order("created_at", { ascending: false });
     if (channelListData.error) {
       return NextResponse.json({
