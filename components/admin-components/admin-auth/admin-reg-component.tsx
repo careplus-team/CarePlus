@@ -81,7 +81,7 @@ const AdminReg = () => {
   //handle close success modal for remove admin
   const handleCloseRemoveSuccess = () => {
     setShowRemoveSuccess(false);
-    window.location.reload();
+
     setRemoveEmail("");
     setRemoveDisabled(false);
     setAddDisabled(false);
@@ -94,7 +94,7 @@ const AdminReg = () => {
       setNoOfUsers(count.data.noOfUsers || 0);
       setNoOfAdmins(count.data.noOfAdmins || 0);
     });
-  }, [showRemoveSuccess, showSuccess]);
+  }, [showRemoveSuccess, showSuccess, showRemoveSuccess]);
 
   return (
     <AdminSecurity>

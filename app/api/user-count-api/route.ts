@@ -21,11 +21,17 @@ export async function GET(req: NextRequest) {
       .select("*", { count: "exact", head: true })
       .eq("role", "emergency_manager");
 
+    const noOfAmbulanceOperators = await supabaseServer
+      .from("user")
+      .select("*", { count: "exact", head: true })
+      .eq("role", "ambulance_operator");
+
     return NextResponse.json({
       noOfUsers: noOfUsers.count,
       noOfAdmins: noOfAdmins.count,
       noOfDoctors: noOfDoctors.count,
       noOfEmergencyManagers: noOfEmergencyManagers.count,
+      noOfAmbulanceOperators: noOfAmbulanceOperators.count,
       success: true,
       message: "User counts fetched successfully",
     });

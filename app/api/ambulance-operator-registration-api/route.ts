@@ -1,32 +1,32 @@
 import { supabaseServer } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 
-// Create POST API to register a user as emergency manager by email
+// Create POST API to register a user as ambulance operator by email
 export async function POST(req: NextRequest) {
   // Get the email from the request body
   try {
     const { email } = await req.json();
 
-    // Update the user's role to "emergency_manager" in the "user" table
+    // Update the user's role to "ambulance_operator" in the "user" table
 
-    const isAlreadyEmergencyManager = await supabaseServer
+    const isAlreadyAmbulanceOperator = await supabaseServer
       .from("user")
       .select("*")
       .eq("email", email)
-      .eq("role", "emergency_manager")
+      .eq("role", "ambulance_operator")
       .maybeSingle();
-    if (isAlreadyEmergencyManager.data) {
+    if (isAlreadyAmbulanceOperator.data) {
       return NextResponse.json({
         data: null,
         success: false,
-        message: "User is already an emergency manager",
+        message: "User is already an ambulance operator",
       });
     }
 
     const userDetails = await supabaseServer
       .from("user")
       .update({
-        role: "emergency_manager",
+        role: "ambulance_operator",
       })
       .eq("email", email)
       .select()
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       data: userDetails.data,
       success: true,
-      message: "User updated to emergency manager successfully",
+      message: "User updated to ambulance operator successfully",
     });
   } catch (e) {
     // Handle JSON parsing errors or other unexpected errors
