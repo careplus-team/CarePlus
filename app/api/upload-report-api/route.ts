@@ -3,7 +3,8 @@ import { supabaseServer } from "@/lib/supabase/admin";
 
 export async function POST(req: NextRequest) {
   try {
-    const { patientEmail, title, reportUrl, description } = await req.json();
+    const { patientEmail, title, reportUrl, description, patientName } =
+      await req.json();
 
     const insertData = await supabaseServer
       .from("lab_report")
@@ -12,6 +13,7 @@ export async function POST(req: NextRequest) {
         title,
         reportUrl,
         description,
+        patientName,
       })
       .select("*")
       .maybeSingle();
