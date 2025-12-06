@@ -8,7 +8,8 @@ export async function POST(req: NextRequest) {
       .from("lab_report")
       .select("*")
       .eq("patientEmail", email)
-      .maybeSingle();
+      .order("created_at", { ascending: false });
+
     console.log(userData);
     if (userData.error) {
       return NextResponse.json({
@@ -24,6 +25,7 @@ export async function POST(req: NextRequest) {
         message: "Report not found",
       });
     }
+    console.log("Fetched report data:", userData.data);
     return NextResponse.json({
       data: userData.data,
       success: true,
