@@ -104,12 +104,20 @@ export default function ChannelUpdateQueue() {
     });
   };
 
+
   //load current sate of queue from database
  
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isSystemActive, setIsSystemActive] = useState(true);
 
+  const [isconfirmation, setConfirmation] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "",
+    onConfirm: () => {}
+  })
   // Derived calculations
   const remainingSlots = isNaN(Number(numberOfSlots))
     ? 0
@@ -153,7 +161,7 @@ export default function ChannelUpdateQueue() {
           <div className="flex items-center justify-between mb-6 px-2">
             <div className="flex items-center gap-3">
               <button
-                onClick={triggerEndSession}
+                onClick={() => {}}
                 className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors group"
               >
                 <div className="bg-white p-2 rounded-full shadow-sm border border-slate-200 group-hover:border-red-400 group-hover:text-red-600 transition-all">
@@ -162,17 +170,17 @@ export default function ChannelUpdateQueue() {
                 <span className="font-semibold text-sm">End Session</span>
               </button>
               <button
-                onClick={triggerStartSession}
-                disabled={sessionStarted || startingSession}
+                onClick={() => {}}
+                disabled={sessionStarted || isPending}
                 className={`flex items-center gap-2 transition-colors group ${
-                  sessionStarted || startingSession
+                  sessionStarted || isPending
                     ? "opacity-50 cursor-not-allowed"
                     : ""
                 }`}
               >
                 <div
                   className={`bg-white p-2 rounded-full shadow-sm border transition-all ${
-                    sessionStarted || startingSession
+                    sessionStarted || isPending
                       ? "border-emerald-300 text-emerald-600"
                       : "border-slate-200 group-hover:border-emerald-300 group-hover:text-emerald-600"
                   }`}
@@ -186,7 +194,7 @@ export default function ChannelUpdateQueue() {
                       : "text-slate-500 group-hover:text-slate-800"
                   }`}
                 >
-                  {startingSession
+                  {isPending
                     ? "Starting..."
                     : sessionStarted
                     ? "Session Active"
@@ -315,7 +323,7 @@ export default function ChannelUpdateQueue() {
                     </h3>
                     <button
                       disabled={isUpdating}
-                      onClick={triggerResetQueue}
+                      onClick={() => {}}
                       className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full hover:bg-emerald-100 transition-colors"
                     >
                       RESET
@@ -325,7 +333,7 @@ export default function ChannelUpdateQueue() {
                   <div className="flex flex-col items-center gap-6">
                     <div className="flex items-center gap-6">
                       <button
-                        onClick={() => updateQueueState("decrement")}
+                        onClick={() => ("decrement")}
                         disabled={
                           !sessionStarted ||
                           Number(numberOfSlots) <= 0 ||
@@ -349,7 +357,7 @@ export default function ChannelUpdateQueue() {
                       </div>
 
                       <button
-                        onClick={() => updateQueueState("increment")}
+                        onClick={() => ("increment")}
                         disabled={
                           !sessionStarted ||
                           Number(numberOfSlots) >=
@@ -372,7 +380,7 @@ export default function ChannelUpdateQueue() {
                       className={`${
                         Number(numberOfSlots) === 0 ? "flex" : "hidden"
                       } bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-full shadow-lg shadow-green-200 transition-all`}
-                      onClick={triggerEndSession}
+                      onClick={() => {}}
                     >
                       <CircleCheckBig />
                       End Session
@@ -385,27 +393,27 @@ export default function ChannelUpdateQueue() {
         </div>
       )}
       <AlertDialog
-        open={confirmation.isOpen}
-        onOpenChange={(isOpen) =>
-          setConfirmation((prev) => ({ ...prev, isOpen }))
+        open={isconfirmation.isOpen}
+        onOpenChange={(isOpen: boolean) =>
+          setConfirmation({ ...isconfirmation, isOpen })
         }
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{confirmation.title}</AlertDialogTitle>
+            <AlertDialogTitle>{isconfirmation.title}</AlertDialogTitle>
             <AlertDialogDescription>
-              {confirmation.message}
+              {isconfirmation.message}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                confirmation.onConfirm();
-                setConfirmation((prev) => ({ ...prev, isOpen: false }));
+                isconfirmation.onConfirm();
+                setConfirmation({ ...isconfirmation, isOpen: false });
               }}
               className={
-                confirmation.type === "end" || confirmation.type === "reset"
+                isconfirmation.type === "end" || isconfirmation.type === "reset"
                   ? "bg-red-600 hover:bg-red-700"
                   : "bg-emerald-600 hover:bg-emerald-700"
               }
