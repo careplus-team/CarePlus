@@ -4,9 +4,9 @@ import React, { ReactNode, useEffect, useState, useTransition } from "react";
 import { fetchUserInfoFromAuth } from "../client-actions/current-user";
 import { useRouter } from "next/navigation";
 
-const AdminSecurity = ({ children }: { children: ReactNode }) => {
+const UserSecurity = ({ children }: { children: ReactNode }) => {
   const [isPending, startTransition] = useTransition();
-  const [adminDetails, setAdminDetails] = useState<any>(null);
+  const [userDetails, setUserDetails] = useState<any>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -19,24 +19,15 @@ const AdminSecurity = ({ children }: { children: ReactNode }) => {
         router.push("/login");
         return;
       } else {
-        // Check if user is admin
-        const adminCheckData = await axios.post("/api/check-admin", {
-          email: currentUserData?.data?.claims?.email,
-        });
-        console.log("admin check data", adminCheckData.data);
-        if (!adminCheckData.data.isAdmin) {
-          router.push("/login");
-        } else {
-          console.log("User is an admin");
-          setAdminDetails(adminCheckData.data.data);
-        }
+        console.log("User is an authenticated user");
+        setUserDetails(currentUserData.data);
       }
     });
   }, []);
 
   return (
     <div>
-      {isPending || adminDetails === null ? (
+      {isPending || userDetails === null ? (
         <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
           <div className="bg-transparent rounded-lg  p-8 max-w-sm w-full text-center">
             <div className="mb-6">
@@ -60,10 +51,11 @@ const AdminSecurity = ({ children }: { children: ReactNode }) => {
               </svg>
             </div>
             <h2 className="text-xl font-semibold text-gray-800 mb-2">
-              Verifying Admin Access
+              Verifying User Access
             </h2>
             <p className="text-gray-600">
-              Please wait while we confirm your permissions...
+              Your health journey is loading... preparing your personalized care
+              space.
             </p>
           </div>
         </div>
@@ -74,4 +66,4 @@ const AdminSecurity = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export default AdminSecurity;
+export default UserSecurity;

@@ -82,6 +82,8 @@ model opdsession {
   doctorEmail             String?
   doctorName              String?
   numberOfPatientsSlots   Int?
+  orginalSlotsCount       Int?
+  lastIssuedToken         Int?      @default(0)
   estimatedTimePerPatient BigInt?
   notes                   String?
   updatedAt               DateTime? @default(now()) @db.Timestamp(6)

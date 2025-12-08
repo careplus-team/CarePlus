@@ -20,9 +20,19 @@ import LoadingUI from "@/lib/UI-helpers/loading-ui";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-const DoctorDashboard = () => {
-  const client = createClient();
+const ActiveSessionComponent = () => {
+  const supabaseClient = createClient();
   const router = useRouter();
 
   const [selected, setSelected] = useState<any>(null);
@@ -31,7 +41,6 @@ const DoctorDashboard = () => {
   const [channelData, setChannelData] = useState<any>([]);
   const [opdSessionData, setOpdSessionData] = useState<any>([]);
   const [initialLoad, setInitialLoad] = useState<boolean>(true);
-  const [doctorInfo, setDoctorInfo] = useState<any>(null);
 
   const getStatusColor = (status: any) => {
     switch (status) {
@@ -63,18 +72,7 @@ const DoctorDashboard = () => {
   const getSignedInUserData = () => {
     startTransition(async () => {
       try {
-        //fetch doctor data from supabase auth
-        const userData = await client.auth.getUser();
-
-        const doctorInfo = await axios.post("/api/doctor-details-get-api", {
-          email: userData.data.user?.email,
-        });
-        console.log("signed in doctor data", doctorInfo);
-        setDoctorInfo(doctorInfo.data.data);
-
-        const channelingData = await axios.post("/api/get-doctor-channel-api", {
-          email: userData.data.user?.email,
-        });
+        const channelingData = await axios.post("/api/get-channel-list-api");
         if (channelingData.data.success) {
           console.log("doctor channel data", channelingData.data.data);
           setChannelData(channelingData.data.data);
@@ -83,12 +81,7 @@ const DoctorDashboard = () => {
           console.log("error fetching doctor channel data");
         }
 
-        const opdSessionData = await axios.post(
-          "/api/get-doctor-opd-session-list-api",
-          {
-            email: userData.data.user?.email,
-          }
-        );
+        const opdSessionData = await axios.post("/api/get-opd-session-api");
         if (opdSessionData.data.success) {
           setOpdSessionData(opdSessionData.data.data);
           console.log("doctor opd session data", opdSessionData.data.data);
@@ -106,63 +99,109 @@ const DoctorDashboard = () => {
 
   useEffect(() => {
     getSignedInUserData();
+    //subscribe for realtime updates
+    const channel = supabaseClient
+      .channel("realtime:opdsession-admin")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "opdsession" },
+        (payload) => {
+          console.log("Realtime OPD session update:", payload);
+          if (payload.eventType === "INSERT") {
+            setOpdSessionData([payload.new]);
+          } else if (payload.eventType === "UPDATE") {
+            setOpdSessionData([payload.new]);
+          } else if (payload.eventType === "DELETE") {
+            setOpdSessionData([]);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabaseClient.removeChannel(channel);
+    };
   }, []);
+
+  const [confirmation, setConfirmation] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: "start" | "end" | "reset";
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "start",
+    onConfirm: () => {},
+  });
+
+  const triggerEndSession = () => {
+    console.log("trigger end session");
+    setConfirmation({
+      isOpen: true,
+      title: "End OPD Session?",
+      message:
+        "This will close the current session. This action cannot be undone. Are you sure?",
+      type: "end",
+      onConfirm: handleEndSession,
+    });
+  };
+
+  //handle end session
+  const handleEndSession = async () => {
+    try {
+      setInitialLoad(true);
+      const endResult = await axios.post("/api/delete-opd-session-api");
+      if (endResult.data.success) {
+        toast.success("OPD Session ended successfully.");
+        router.push("/admin/active-sessions");
+      } else {
+        toast.error("Error ending OPD Session: " + endResult.data.message);
+        return;
+      }
+    } catch (e) {
+      toast.error("Error ending OPD Session.");
+      return;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* HEADER */}
-      {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-emerald-700 via-teal-600 to-cyan-500 rounded-2xl p-8 mb-8 text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/10"></div>
-        <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full"></div>
-        <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/10 rounded-full"></div>
+      <div className=" absolute top-4 left-4 ">
+        <p className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500  to-green-500 font-bold  text-2xl">
+          <a href="/">CarePlus</a>
+        </p>
+      </div>
 
-        <div className="relative flex flex-col md:flex-row items-center justify-between">
-          <div className="mb-6 md:mb-0">
-            <h2 className="text-3xl md:text-4xl font-bold mb-2">
-              Welcome back,{" "}
-              {isPending ? (
-                <span className="inline-block animate-pulse bg-gray-300 h-8 w-24 rounded mx-2"></span>
-              ) : (
-                "Dr " + doctorInfo?.name.toLowerCase()
-              )}
-              ! 👋
-            </h2>
-            <p className="text-blue-100 text-lg">
-              Your stethoscope to the digital world - here’s your clinical
-              dashboard.
-            </p>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-              <Image
-                src={doctorInfo?.profilePicture || "/temp_user.webp"}
-                alt="Profile"
-                width={70}
-                height={70}
-                className="rounded-full object-cover"
-              />
-            </div>
-          </div>
+      <div className="mb-8 mt-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+            Active Sessions
+          </h1>
+          <p className="text-gray-500 mt-1">
+            Monitor and manage all currently active OPD and Channel sessions.
+          </p>
         </div>
       </div>
       {initialLoad ? (
         <LoadingUI />
       ) : (
         <div>
-          {doctorInfo.OPD && opdSessionData.length > 0 ? (
+          {opdSessionData.length > 0 ? (
             <div>
               {/* OPD SESSIONS SECTION */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 border border-5 mb-5 rounded-3xl p-5  shadow-lg bg-white/60 backdrop-blur-sm">
-                {/* LEFT SECTION - ASSIGNED CHANNELS */}
+                {/* LEFT SECTION - CURRENT CHANNELS */}
                 <div className="lg:col-span-2 space-y-6">
                   <div className="bg-white rounded-3xl shadow-xl border p-8">
                     <h2 className="text-2xl font-bold text-slate-800 mb-3">
-                      Assigned OPD Sessions
+                      Current OPD Sessions
                     </h2>
                     <p className="text-gray-500 text-sm mb-6">
-                      View and manage your OPD sessions
+                      View and OPD sessions Status
                     </p>
 
                     <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
@@ -171,18 +210,17 @@ const DoctorDashboard = () => {
                           key={ch.id}
                           className="p-5 bg-white border rounded-2xl shadow-sm hover:shadow-md transition"
                         >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
+                          <div className="flex flex-col md:flex-row items-start justify-between gap-4">
+                            <div className="flex-1 w-full">
                               <h3 className="font-bold text-gray-800 text-lg">
                                 OPD Session
                               </h3>
 
-                              <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
+                              <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-600">
                                 <div className="flex items-center space-x-1">
                                   <TicketIcon className="w-4 h-4" />
                                   <span>
-                                    Total Number Of Patient Slots{" "}
-                                    {ch.orginalSlotsCount}
+                                    Total Slots: {ch.orginalSlotsCount}
                                   </span>
                                 </div>
                                 <div className="flex items-center space-x-1">
@@ -201,7 +239,7 @@ const DoctorDashboard = () => {
                             </div>
 
                             {/* STATUS + PATIENT COUNT */}
-                            <div className="flex flex-col items-end">
+                            <div className="flex flex-col md:flex-col items-center md:items-end justify-between w-full md:w-auto mt-2 md:mt-0 gap-4">
                               <div
                                 className={`px-3 py-1 text-xs rounded-full border flex items-center space-x-1 ${
                                   ch.started
@@ -214,20 +252,24 @@ const DoctorDashboard = () => {
                                 </span>
                               </div>
                               {/*I add estimate time per patient insted of number of patients becouse not as normal channels , before start OPD session , patients cannot book slots . */}
-                              <p className="text-2xl font-bold text-gray-800 mt-3">
-                                {ch.estimatedTimePerPatient} mins
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                per patient
-                              </p>
+                              <div className="flex gap-10">
+                                <div className="text-right">
+                                  <p className="text-xl md:text-2xl font-bold text-gray-800 mt-0 md:mt-3">
+                                    {ch.estimatedTimePerPatient} mins
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    per patient
+                                  </p>
+                                </div>
 
-                              {/* VIEW BUTTON */}
-                              <button
-                                onClick={() => setSelectedOpd(ch as any)}
-                                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
-                              >
-                                View
-                              </button>
+                                {/* VIEW BUTTON */}
+                                <button
+                                  onClick={() => setSelectedOpd(ch as any)}
+                                  className="md:mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
+                                >
+                                  View
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -269,13 +311,23 @@ const DoctorDashboard = () => {
                       </div>
                     ) : (
                       <div className="space-y-6">
-                        <div>
-                          <p className="text-sm text-gray-500 uppercase font-medium">
-                            Channel Name
-                          </p>
-                          <p className="font-bold text-gray-800 text-lg">
-                            OPD Session
-                          </p>
+                        <div className="flex justify-between">
+                          <div>
+                            <p className="text-sm text-gray-500 uppercase font-medium">
+                              Channel Name
+                            </p>
+                            <p className="font-bold text-gray-800 text-lg">
+                              OPD Session
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end">
+                            <p className="text-sm text-gray-500 uppercase font-medium">
+                              Currently Available Number
+                            </p>
+                            <p className="font-semibold text-gray-700 mt-1">
+                              {selectedOpd.lastIssuedToken + 1}
+                            </p>
+                          </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -335,13 +387,11 @@ const DoctorDashboard = () => {
                         {/* BUTTONS */}
                         <div className="space-y-3 pt-4 border-t">
                           <Button
-                            onClick={() =>
-                              router.push("/doctor/opd-queue-update")
-                            }
-                            className="w-full py-5 flex items-center justify-center space-x-2 px-6  bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition"
+                            onClick={triggerEndSession}
+                            className="w-full py-5 flex items-center justify-center space-x-2 px-6  bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition"
                           >
                             <Play className="w-5 h-5" />
-                            <span>Start Consultation</span>
+                            <span>End Session</span>
                           </Button>
                         </div>
                       </div>
@@ -356,10 +406,10 @@ const DoctorDashboard = () => {
                 <div className="lg:col-span-2 space-y-6">
                   <div className="bg-white rounded-3xl shadow-xl border p-8">
                     <h2 className="text-2xl font-bold text-slate-800 mb-3">
-                      Assigned Channels
+                      Currently Available Channels
                     </h2>
                     <p className="text-gray-500 text-sm mb-6">
-                      View and manage your consultation sessions
+                      View and manage currently available channel sessions
                     </p>
 
                     <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
@@ -369,13 +419,13 @@ const DoctorDashboard = () => {
                             key={ch.id}
                             className="p-5 bg-white border rounded-2xl shadow-sm hover:shadow-md transition"
                           >
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
+                            <div className="flex flex-col md:flex-row items-start justify-between gap-4">
+                              <div className="flex-1 w-full">
                                 <h3 className="font-bold text-gray-800 text-lg">
                                   {ch.name}
                                 </h3>
 
-                                <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
+                                <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-600">
                                   <div className="flex items-center space-x-1">
                                     <MapPin className="w-4 h-4" />
                                     <span>Room {ch.roomNumber}</span>
@@ -396,7 +446,7 @@ const DoctorDashboard = () => {
                               </div>
 
                               {/* STATUS + PATIENT COUNT */}
-                              <div className="flex flex-col items-end">
+                              <div className="flex flex-col md:flex-col items-center md:items-end justify-between w-full md:w-auto mt-2 md:mt-0 gap-4">
                                 <div
                                   className={`px-3 py-1 text-xs rounded-full border flex items-center space-x-1 ${
                                     ch.state === "active"
@@ -406,27 +456,30 @@ const DoctorDashboard = () => {
                                 >
                                   <span className="capitalize">{ch.state}</span>
                                 </div>
+                                <div className="flex gap-10">
+                                  <div className="text-right">
+                                    <p className="text-xl md:text-2xl font-bold text-gray-800 mt-0 md:mt-3">
+                                      {ch.totalSlots - ch.remainingSlots}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      Patients
+                                    </p>
+                                  </div>
 
-                                <p className="text-2xl font-bold text-gray-800 mt-3">
-                                  {ch.totalSlots - ch.remainingSlots}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  Patients
-                                </p>
-
-                                {/* VIEW BUTTON */}
-                                <button
-                                  onClick={() => setSelected(ch as any)}
-                                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
-                                >
-                                  View
-                                </button>
+                                  {/* VIEW BUTTON */}
+                                  <button
+                                    onClick={() => setSelected(ch as any)}
+                                    className="md:mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
+                                  >
+                                    View
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           </div>
                         ))
                       ) : (
-                        <p className="text-gray-500">No channels assigned.</p>
+                        <p className="text-gray-500">No channels available.</p>
                       )}
                     </div>
                   </div>
@@ -528,15 +581,10 @@ const DoctorDashboard = () => {
 
                         {/* BUTTONS */}
                         <div className="space-y-3 pt-4 border-t">
-                          <button className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition">
-                            <Play className="w-5 h-5" />
-                            <span>Start Consultation</span>
-                          </button>
-
                           <div className="">
-                            <button className="flex w-full items-center justify-center space-x-2 px-4 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700">
+                            <button className="flex w-full items-center justify-center space-x-2 px-4 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700">
                               <UserCheck className="w-4 h-4" />
-                              <span>Show Patients</span>
+                              <span>End Channel</span>
                             </button>
                           </div>
                         </div>
@@ -553,10 +601,10 @@ const DoctorDashboard = () => {
                 <div className="lg:col-span-2 space-y-6">
                   <div className="bg-white rounded-3xl shadow-xl border p-8">
                     <h2 className="text-2xl font-bold text-slate-800 mb-3">
-                      Assigned Channels
+                      Currently Available Channels
                     </h2>
                     <p className="text-gray-500 text-sm mb-6">
-                      View and manage your consultation sessions
+                      View and manage currently available channel sessions
                     </p>
 
                     <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
@@ -566,13 +614,13 @@ const DoctorDashboard = () => {
                             key={ch.id}
                             className="p-5 bg-white border rounded-2xl shadow-sm hover:shadow-md transition"
                           >
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
+                            <div className="flex flex-col md:flex-row items-start justify-between gap-4">
+                              <div className="flex-1 w-full">
                                 <h3 className="font-bold text-gray-800 text-lg">
                                   {ch.name}
                                 </h3>
 
-                                <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
+                                <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-600">
                                   <div className="flex items-center space-x-1">
                                     <MapPin className="w-4 h-4" />
                                     <span>Room {ch.roomNumber}</span>
@@ -593,7 +641,7 @@ const DoctorDashboard = () => {
                               </div>
 
                               {/* STATUS + PATIENT COUNT */}
-                              <div className="flex flex-col items-end">
+                              <div className="flex flex-col md:flex-col items-center md:items-end justify-between w-full md:w-auto mt-2 md:mt-0 gap-4">
                                 <div
                                   className={`px-3 py-1 text-xs rounded-full border flex items-center space-x-1 ${
                                     ch.state === "active"
@@ -603,21 +651,24 @@ const DoctorDashboard = () => {
                                 >
                                   <span className="capitalize">{ch.state}</span>
                                 </div>
+                                <div className="flex gap-10">
+                                  <div className="text-right">
+                                    <p className="text-xl md:text-2xl font-bold text-gray-800 mt-0 md:mt-3">
+                                      {ch.totalSlots - ch.remainingSlots}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      Patients
+                                    </p>
+                                  </div>
 
-                                <p className="text-2xl font-bold text-gray-800 mt-3">
-                                  {ch.totalSlots - ch.remainingSlots}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  Patients
-                                </p>
-
-                                {/* VIEW BUTTON */}
-                                <button
-                                  onClick={() => setSelected(ch as any)}
-                                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
-                                >
-                                  View
-                                </button>
+                                  {/* VIEW BUTTON */}
+                                  <button
+                                    onClick={() => setSelected(ch as any)}
+                                    className="md:mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
+                                  >
+                                    View
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -725,15 +776,10 @@ const DoctorDashboard = () => {
 
                         {/* BUTTONS */}
                         <div className="space-y-3 pt-4 border-t">
-                          <button className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition">
-                            <Play className="w-5 h-5" />
-                            <span>Start Consultation</span>
-                          </button>
-
                           <div className="">
-                            <button className="flex w-full items-center justify-center space-x-2 px-4 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700">
+                            <button className="flex w-full items-center justify-center space-x-2 px-4 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700">
                               <UserCheck className="w-4 h-4" />
-                              <span>Show Patients</span>
+                              <span>End Channel</span>
                             </button>
                           </div>
                         </div>
@@ -746,8 +792,39 @@ const DoctorDashboard = () => {
           )}
         </div>
       )}
+      <AlertDialog
+        open={confirmation.isOpen}
+        onOpenChange={(isOpen) =>
+          setConfirmation((prev) => ({ ...prev, isOpen }))
+        }
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmation.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmation.message}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                confirmation.onConfirm();
+                setConfirmation((prev) => ({ ...prev, isOpen: false }));
+              }}
+              className={
+                confirmation.type === "end" || confirmation.type === "reset"
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-emerald-600 hover:bg-emerald-700"
+              }
+            >
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
 
-export default DoctorDashboard;
+export default ActiveSessionComponent;

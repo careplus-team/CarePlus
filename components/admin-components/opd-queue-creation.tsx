@@ -79,7 +79,7 @@ export default function QueueCreation() {
           toast.error(
             "An existing OPD session is active. Please end it before creating a new one."
           );
-          router.push("/admin/OPD-Q-update");
+          router.push("/admin/dashboard");
           return;
         }
       } catch (e) {
@@ -119,7 +119,7 @@ export default function QueueCreation() {
         toast.error("Failed to create OPD Session. Please try again.");
         return;
       }
-      router.push("/admin/OPD-Q-update");
+      router.push("/admin/admin-dashboard");
     });
   };
 

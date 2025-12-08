@@ -8,6 +8,7 @@ import { useTransition } from "react";
 import { start } from "node:repl";
 import axios from "axios";
 import { toast } from "sonner";
+import { set } from "zod";
 
 const HomeComponent = () => {
   const router = useRouter();
@@ -23,6 +24,11 @@ const HomeComponent = () => {
 
   const [tips, setTips] = useState<any[]>([]);
   const [isPendingTips, startTransitionTips] = useTransition();
+  const [opdSessionData, setOpdSessionData] = useState<any>(null);
+  const [isPendingOpdSession, startTransitionOpdSession] = useTransition();
+
+  const [issuing, setIssuing] = useState(false);
+  const [lastTicket, setLastTicket] = useState<number | null>(null);
 
   useEffect(() => {
     // 1. Fetch initial notices
@@ -106,6 +112,48 @@ const HomeComponent = () => {
     };
   }, []);
 
+  //get realtime OPD session data
+
+  useEffect(() => {
+    //fetch initial OPD session data from DB
+    startTransitionOpdSession(async () => {
+      const opdSessionInfo = await axios.post("/api/get-opd-session-api");
+      console.log("OPD session inspect", opdSessionInfo.data.success);
+      if (opdSessionInfo.data.success) {
+        setOpdSessionData(opdSessionInfo.data.data[0]);
+        console.log("OPD session data", opdSessionInfo.data.data);
+      } else {
+        toast.error("Error fetching OPD session data");
+        return;
+      }
+    });
+
+    //subscribe for realtime updates
+    const channel = supabaseClient
+      .channel("realtime:opdsession")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "opdsession" },
+        (payload) => {
+          console.log("Realtime OPD session update:", payload);
+          if (payload.eventType === "UPDATE") {
+            setOpdSessionData(payload.new);
+          } else if (payload.eventType === "INSERT") {
+            setOpdSessionData(payload.new);
+          } else if (payload.eventType === "DELETE") {
+            setOpdSessionData(null);
+          }
+          console.log("inspect state", opdSessionData);
+          console.log("Realtime update:", payload.new);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabaseClient.removeChannel(channel);
+    };
+  }, []);
+
   const getUserInfoFromDb = (email: any) => {
     startTransition(async () => {
       const client = createClient();
@@ -114,20 +162,33 @@ const HomeComponent = () => {
         .from("user")
         .select("*")
         .eq("email", email);
-      setDbUserInfo(dbUserInfo.data ? dbUserInfo.data[0] : null);
-      console.log(dbUserInfo);
+      if (dbUserInfo.data) {
+        if (dbUserInfo.data?.length <= 0) {
+          const doctorInfor = await axios.post("/api/doctor-details-get-api", {
+            email,
+          });
+          setDbUserInfo(doctorInfor.data.data);
+        } else {
+          setDbUserInfo(dbUserInfo.data ? dbUserInfo.data[0] : null);
+          console.log(dbUserInfo);
+        }
+      } else {
+        toast.error("Error fetching user data from database");
+        return;
+      }
     });
   };
 
   const fetchUserInfoFromAuth = () => {
     startTransition(async () => {
       const client = createClient();
-      const userAuthInfo = await client.auth.getClaims();
-      setUserInfo(userAuthInfo);
-      console.log("haree1");
-      if (userAuthInfo?.data?.claims?.email != null) {
-        console.log("hree", userAuthInfo?.data?.claims?.email);
-        getUserInfoFromDb(userAuthInfo?.data?.claims?.email);
+      const { data, error } = await client.auth.getUser();
+      console.log("user auth info", data);
+      setUserInfo(data.user);
+
+      if (data?.user?.email != null) {
+        console.log("hree", data.user.email);
+        getUserInfoFromDb(data.user.email);
       }
     });
   };
@@ -145,6 +206,68 @@ const HomeComponent = () => {
   useEffect(() => {
     fetchUserInfoFromAuth();
   }, []);
+
+  const [isBookingPending, startBookingTransition] = useTransition();
+  const [alreadyBookingAutoTrigger, setAlreadyBookingAutoTrigger] =
+    useState(false);
+  // Handle OPD Booking
+  const opdBookingHandler = () => {
+    if (opdSessionData == null) {
+      return;
+    }
+    startBookingTransition(async () => {
+      try {
+        const response = await axios.post("/api/opd-booking-by-user-api", {
+          userEmail: userInfo?.email,
+          sessionId: opdSessionData.id,
+        });
+        if (response.data.success) {
+          setAlreadyBookingAutoTrigger(!alreadyBookingAutoTrigger);
+          toast.success("OPD slot booked successfully!");
+        } else {
+          toast.error(response.data.message || "Error booking OPD slot");
+        }
+      } catch (error) {
+        toast.error("Error booking OPD slot");
+        return;
+      }
+    });
+  };
+
+  //check is OPD session laready booked
+  const [isAlreadyBooked, setIsAlreadyBooked] = useState(false);
+  const [userBooking, setUserBooking] = useState<any>(null);
+  const [isPendingAlraedyBooked, startTransitionAlreadyBooked] =
+    useTransition();
+
+  const checkUserAlreadyBookedOPD = async () => {
+    if (userInfo?.email == null || opdSessionData == null) {
+      return;
+    }
+    startTransitionAlreadyBooked(async () => {
+      const response = await axios.post("/api/check-already-booked-opd-api", {
+        email: userInfo?.email,
+      });
+      if (response.data.success && response.data.data.length > 0) {
+        console.log("already booked data", response.data.data);
+        setIsAlreadyBooked(true);
+        setUserBooking(response.data.data[0]);
+      } else {
+        setIsAlreadyBooked(false);
+        setUserBooking(null);
+      }
+    });
+  };
+
+  useEffect(() => {
+    checkUserAlreadyBookedOPD();
+  }, [userInfo, opdSessionData, alreadyBookingAutoTrigger]);
+
+  useEffect(() => {
+    if (opdSessionData != null) {
+      return;
+    }
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -217,52 +340,11 @@ const HomeComponent = () => {
                   </div>
                 </div>
               </div>
-
-              <div className="p-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  {/* Doctor Info */}
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="flex items-center space-x-4 mb-4">
-                      <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                        DS
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-gray-900">
-                          Dr. Sutharan
-                        </h4>
-                        <p className="text-blue-600 font-medium">Cardiology</p>
-                        <p className="text-sm text-gray-600">
-                          MBBS • Reg: 123456
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Queue Details */}
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                      <span className="text-gray-600">Total Seats</span>
-                      <span className="font-bold text-blue-600">100</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
-                      <span className="text-gray-600">Current Queue</span>
-                      <span className="font-bold text-orange-600">45</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                      <span className="text-gray-600">Available Position</span>
-                      <span className="font-bold text-green-600">85</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
-                      <span className="text-gray-600">Est. Wait Time</span>
-                      <span className="font-bold text-purple-600">30 mins</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-6">
-                  <Button className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200">
+              {opdSessionData == null ? (
+                <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                  <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
                     <svg
-                      className="w-5 h-5 mr-2"
+                      className="w-8 h-8 text-slate-400"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -270,14 +352,175 @@ const HomeComponent = () => {
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                        strokeWidth={1.5}
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    Reserve Position #85
-                  </Button>
+                  </div>
+                  <h3 className="text-lg font-medium text-slate-900">
+                    No Active Session
+                  </h3>
+                  <p className="text-slate-500 mt-1 text-sm max-w-xs">
+                    The OPD queue is currently closed. Please check again after
+                    while .
+                  </p>
                 </div>
-              </div>
+              ) : (
+                <div className="p-6">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* Doctor Info */}
+                    <div className="bg-slate-50 rounded-xl p-4">
+                      <div className="flex items-center space-x-4 mb-4">
+                        <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                          DS
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-gray-900">
+                            {opdSessionData?.doctorName || "Loading..."}
+                          </h4>
+                          <p className="text-blue-600 font-medium">
+                            Cardiology
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            MBBS • Reg: 123456
+                          </p>
+                          <p>Notes</p>
+                          <p>{opdSessionData?.notes || "Loading..."}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Queue Details */}
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                        <span className="text-gray-600">Total Seats</span>
+                        <span className="font-bold text-blue-600">
+                          {opdSessionData?.orginalSlotsCount || "Loading..."}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
+                        <span className="text-gray-600">Current Token</span>
+                        <span className="font-bold text-orange-600">
+                          {opdSessionData?.numberOfPatientsSlots || "0"}
+                        </span>
+                      </div>
+
+                      {userBooking ? (
+                        <>
+                          <div className="flex justify-between items-center p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+                            <span className="text-gray-600 font-medium">
+                              Your Token
+                            </span>
+                            <span className="font-bold text-indigo-600 text-lg">
+                              {userBooking.bookingNumber}
+                            </span>
+                          </div>
+
+                          <div
+                            className={`flex justify-between items-center p-3 rounded-lg border ${
+                              Number(opdSessionData?.numberOfPatientsSlots) ===
+                              Number(userBooking.bookingNumber)
+                                ? "bg-green-50 border-green-200"
+                                : Number(
+                                    opdSessionData?.numberOfPatientsSlots
+                                  ) > Number(userBooking.bookingNumber)
+                                ? "bg-red-50 border-red-200"
+                                : "bg-purple-50 border-purple-200"
+                            }`}
+                          >
+                            <span className="text-gray-600 font-medium">
+                              Status
+                            </span>
+                            <span
+                              className={`font-bold ${
+                                Number(
+                                  opdSessionData?.numberOfPatientsSlots
+                                ) === Number(userBooking.bookingNumber)
+                                  ? "text-green-600 animate-pulse"
+                                  : Number(
+                                      opdSessionData?.numberOfPatientsSlots
+                                    ) > Number(userBooking.bookingNumber)
+                                  ? "text-red-600"
+                                  : "text-purple-600"
+                              }`}
+                            >
+                              {Number(opdSessionData?.numberOfPatientsSlots) ===
+                              Number(userBooking.bookingNumber)
+                                ? "It's Your Turn!"
+                                : Number(
+                                    opdSessionData?.numberOfPatientsSlots
+                                  ) > Number(userBooking.bookingNumber)
+                                ? "Your Turn Passed"
+                                : `${
+                                    (Number(userBooking.bookingNumber) -
+                                      Number(
+                                        opdSessionData?.numberOfPatientsSlots
+                                      )) *
+                                      Number(
+                                        opdSessionData?.estimatedTimePerPatient ||
+                                          5
+                                      ) +
+                                    " mins wait"
+                                  }`}
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                            <span className="text-gray-600">
+                              Next Available Token
+                            </span>
+                            <span className="font-bold text-green-600">
+                              {(opdSessionData?.lastIssuedToken || 0) + 1}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
+                            <span className="text-gray-600">
+                              Est. Wait Time
+                            </span>
+                            <span className="font-bold text-purple-600">
+                              {((opdSessionData?.lastIssuedToken || 0) +
+                                1 -
+                                opdSessionData?.numberOfPatientsSlots) *
+                                (opdSessionData?.estimatedTimePerPatient || 0) +
+                                " minutes" || "Loading..."}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-6">
+                    <Button
+                      disabled={
+                        isPendingAlraedyBooked ||
+                        isAlreadyBooked ||
+                        isBookingPending
+                      }
+                      onClick={opdBookingHandler}
+                      className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200"
+                    >
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                        />
+                      </svg>
+                      Reserve Position{" "}
+                      {(opdSessionData?.lastIssuedToken || 0) + 1}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Quick Actions Mobile */}
