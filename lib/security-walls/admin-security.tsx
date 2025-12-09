@@ -4,11 +4,7 @@ import React, { ReactNode, useEffect, useState, useTransition } from "react";
 import { fetchUserInfoFromAuth } from "../client-actions/current-user";
 import { useRouter } from "next/navigation";
 
-const AdminSecurity = ({
-  children,
-}: {
-  children: (adminDetails: any) => ReactNode;
-}) => {
+const AdminSecurity = ({ children }: { children: ReactNode }) => {
   const [isPending, startTransition] = useTransition();
   const [adminDetails, setAdminDetails] = useState<any>(null);
   const router = useRouter();
@@ -23,6 +19,7 @@ const AdminSecurity = ({
         router.push("/login");
         return;
       } else {
+        // Check if user is admin
         const adminCheckData = await axios.post("/api/check-admin", {
           email: currentUserData?.data?.claims?.email,
         });
@@ -71,7 +68,7 @@ const AdminSecurity = ({
           </div>
         </div>
       ) : (
-        children(adminDetails)
+        children
       )}
     </div>
   );

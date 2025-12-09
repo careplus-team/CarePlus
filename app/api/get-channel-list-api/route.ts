@@ -1,4 +1,4 @@
-import { NextResponse, NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/admin";
 
 export async function POST() {
@@ -6,6 +6,7 @@ export async function POST() {
     const channelListData = await supabaseServer
       .from("channel")
       .select("*")
+
       .order("created_at", { ascending: false });
     if (channelListData.error) {
       return NextResponse.json({

@@ -28,7 +28,8 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "app/api/admin-remove-api"
+    "app/api/admin-remove-api",
+    "app/api/delete-report-api"
   ],
   "exclude": ["node_modules"]
 }

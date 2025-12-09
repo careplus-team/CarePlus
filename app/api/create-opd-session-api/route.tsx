@@ -12,11 +12,12 @@ export async function POST(req: NextRequest) {
       .insert({
         doctorEmail: requestData.doctorEmail,
         doctorName: requestData.doctorName,
-        startTime: requestData.startTime,
-        endTime: requestData.endTime,
-        numberOfPatientsSlots: requestData.numberOfPatientsSlots,
+        timeSlot: requestData.timeSlot,
+        numberOfPatientsSlots: 0, // Initialize current patient to 0
+        lastIssuedToken: 0, // Initialize issued tokens to 0
         estimatedTimePerPatient: requestData.estimatedTimePerPatient,
         notes: requestData.notes || "",
+        orginalSlotsCount: requestData.numberOfPatientsSlots, // Store total capacity here
       })
       .select();
     if (createSessionData.error) {
