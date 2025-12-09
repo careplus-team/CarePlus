@@ -130,7 +130,12 @@ const CreateChannelComponent = () => {
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-50/50 p-4">
-      <div className="w-full max-w-3xl bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className=" absolute top-4 left-4 ">
+        <p className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500  to-green-500 font-bold  text-2xl">
+          <a href="/">CarePlus</a>
+        </p>
+      </div>
+      <div className="w-full mt-10 max-w-3xl bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {/* Header */}
         <div className="px-8 py-6 border-b border-gray-100 bg-gray-50/30">
           <h2 className="text-2xl font-semibold text-gray-800 tracking-tight">
