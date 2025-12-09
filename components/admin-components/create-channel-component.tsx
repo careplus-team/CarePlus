@@ -5,6 +5,7 @@ import React, { startTransition } from "react";
 import { useForm } from "react-hook-form";
 import { Form } from "../ui/form";
 import { z } from "zod";
+import Image from "next/image";
 import {
   FormControl,
   FormField,
@@ -13,7 +14,13 @@ import {
   FormMessage,
 } from "../ui/form";
 import { Input } from "../ui/input";
-import { CalendarIcon, ChevronDownIcon, Clock } from "lucide-react";
+import {
+  CalendarIcon,
+  ChevronDown,
+  ChevronDownIcon,
+  Clock,
+  Stethoscope,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils"; // Assuming you have a utils file for tailwind merge
@@ -35,14 +42,54 @@ import {
 import { useTransition } from "react";
 import axios from "axios";
 import { toast } from "sonner";
+import { spec } from "node:test/reporters";
+import { profile } from "console";
 
 const CreateChannelComponent = () => {
+  const InputGroup = ({
+    label,
+    children,
+    icon: Icon,
+  }: {
+    label: string;
+    children: React.ReactNode;
+    icon: any;
+  }) => (
+    <div className="flex flex-col gap-2">
+      <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+        {Icon && <Icon size={14} className="text-emerald-500" />}
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+  const [isPending, startTransition] = useTransition();
+  const [doctorList, setDoctorList] = React.useState<any[]>([]);
+
+  const fetchDoctorList = () => {
+    startTransition(async () => {
+      const response = await axios.post("/api/doctor-list-get-api", {
+        command: "",
+      });
+      if (response.data.success) {
+        setDoctorList(response.data.data);
+      } else {
+        toast.error("Failed to fetch doctor list: " + response.data.message);
+      }
+      console.log("Doctor List:", response.data);
+    });
+  };
+
+  React.useEffect(() => {
+    fetchDoctorList();
+  }, []);
+
   const form = useForm<z.infer<typeof createChannelSchema>>({
     resolver: zodResolver(createChannelSchema),
     defaultValues: {
       name: "",
       description: "",
-      doctorName: "",
+
       doctorEmail: "",
       date: "",
       time: "",
@@ -67,16 +114,19 @@ const CreateChannelComponent = () => {
         "/api/create-channel-api",
         updatedData
       );
+      if (createdChannelData.data.success === false) {
+        toast.error("Error creating channel: " + createdChannelData.data.error);
+        return;
+      }
       console.log("Form Data", createdChannelData);
+      toast.success("Channel created successfully", {
+        className: "bg-green-600 text-white",
+      });
     });
 
-    toast.success("Channel created successfully", {
-      className: "bg-green-600 text-white",
-    });
     form.reset();
   };
   const [open, setOpen] = React.useState(false);
-  const [isPending, startTransition] = useTransition();
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-50/50 p-4">
@@ -139,38 +189,71 @@ const CreateChannelComponent = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
-                  name="doctorName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Doctor Name</FormLabel>
-                      <FormControl>
-                        <Input
-                          disabled={isPending}
-                          placeholder="Dr. John Doe"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
                   name="doctorEmail"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Doctor Email</FormLabel>
-                      <FormControl>
-                        <Input
-                          disabled={isPending}
-                          placeholder="doctor@careplus.com"
+                    <InputGroup label="Select Doctor" icon={Stethoscope}>
+                      <div className="relative group">
+                        <select
+                          className="w-full appearance-none bg-slate-50 hover:bg-white border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 block p-3 pr-10 transition-all outline-none cursor-pointer"
                           {...field}
+                        >
+                          <option value="" disabled>
+                            Choose a OPD Doctor...
+                          </option>
+                          {doctorList.map((doc) => (
+                            <option key={doc.email} value={doc.email}>
+                              {doc.name} — {doc.specialization}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown
+                          size={16}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
                         />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                      </div>
+                    </InputGroup>
                   )}
                 />
+                {/* Doctor Card Preview */}
+                <div
+                  className={`p-4 rounded-xl border  border-slate-100 bg-white/50 transition-all duration-300 ${
+                    form.watch("doctorEmail")
+                      ? "opacity-100 translate-y-0"
+                      : "opacity-50 grayscale translate-y-2"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm shrink-0">
+                      <Image
+                        className="rounded-full"
+                        alt="Doctor Default Avatar"
+                        width={100}
+                        height={100}
+                        src={
+                          doctorList.find(
+                            (d) => d.email === form.watch("doctorEmail")
+                          )?.profilePicture || "/doctor-default-avatar.png"
+                        }
+                      />
+                    </div>
+                    <div className="overflow-hidden">
+                      <p className="text-sm font-bold text-slate-700 truncate">
+                        {form.watch("doctorEmail")
+                          ? doctorList.find(
+                              (d) => d.email === form.watch("doctorEmail")
+                            )?.name
+                          : "No Doctor Selected"}
+                      </p>
+                      <p className="text-xs text-slate-500 truncate">
+                        {form.watch("doctorEmail")
+                          ? doctorList.find(
+                              (d) => d.email === form.watch("doctorEmail")
+                            )?.specialization
+                          : "Please select a doctor"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Section: Schedule */}
