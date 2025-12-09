@@ -5,10 +5,9 @@ import Image from "next/image";
 import { Button } from "../../ui/button";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { start } from "node:repl";
 import axios from "axios";
 import { toast } from "sonner";
-import { set } from "zod";
+import { Users } from "lucide-react";
 
 const HomeComponent = () => {
   const router = useRouter();
@@ -154,6 +153,66 @@ const HomeComponent = () => {
     };
   }, []);
 
+  // Fetch upcomming channelings for user
+  const [upCommingChannelingData, setUpCommingChannelingData] = useState<any[]>(
+    []
+  );
+  const [upDoctorData, setUpDoctorData] = useState<any[]>([]);
+  const [isUpcommingChannelingPending, startTransitionUpcommingChanneling] =
+    useTransition();
+  const fetchUpcommingChannelings = () => {
+    startTransitionUpcommingChanneling(async () => {
+      if (userInfo?.email == null) {
+        return;
+      }
+      const response = await axios.post(
+        "/api/get-user-upcomming-channelings-api",
+        {
+          patientEmail: userInfo?.email,
+        }
+      );
+      if (response.data.success) {
+        console.log("upcomming channelings", response.data.data);
+        setUpCommingChannelingData(response.data.data || []);
+        response.data.data.forEach(async (channeling: any) => {
+          const daoctorData = await axios.post("/api/doctor-details-get-api", {
+            email: channeling.doctorEmail,
+          });
+          if (daoctorData.data.success) {
+            setUpDoctorData((prev) => [...prev, daoctorData.data.data]);
+          } else {
+            toast.error("Error fetching doctor data for upcomming channelings");
+            return;
+          }
+        });
+      } else {
+        setUpCommingChannelingData([]);
+        toast.error("Error fetching upcomming channelings");
+        return;
+      }
+      console.log("fetched upcomming channelings", response.data);
+    });
+  };
+
+  useEffect(() => {
+    fetchUpcommingChannelings();
+
+    //add realtime subscription to patient_channeling table
+    const channel = supabaseClient
+      .channel("realtime:patient_channeling")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "patient_channeling" },
+        (payload) => {
+          console.log("Realtime patient_channeling update:", payload);
+          fetchUpcommingChannelings();
+        }
+      )
+      .subscribe();
+    return () => {
+      supabaseClient.removeChannel(channel);
+    };
+  }, [userInfo]);
   const getUserInfoFromDb = (email: any) => {
     startTransition(async () => {
       const client = createClient();
@@ -597,72 +656,89 @@ const HomeComponent = () => {
                   </div>
                 </div>
               </div>
-
-              <div className="p-6">
-                <div className="space-y-4 max-h-64 overflow-y-auto">
-                  {[
-                    {
-                      doctor: "Dr. Sutharan",
-                      specialty: "Cardiology",
-                      date: "20th Oct 2023",
-                      time: "10:00 AM",
-                      status: "confirmed",
-                    },
-                    {
-                      doctor: "Dr. Priya",
-                      specialty: "Dermatology",
-                      date: "22nd Oct 2023",
-                      time: "2:30 PM",
-                      status: "pending",
-                    },
-                    {
-                      doctor: "Dr. Kumar",
-                      specialty: "Orthopedics",
-                      date: "25th Oct 2023",
-                      time: "11:15 AM",
-                      status: "confirmed",
-                    },
-                    {
-                      doctor: "Dr. Silva",
-                      specialty: "Neurology",
-                      date: "28th Oct 2023",
-                      time: "9:00 AM",
-                      status: "confirmed",
-                    },
-                  ].map((appointment, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
-                    >
-                      <div className="flex items-center space-x-4">
-                        <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold">
-                          {appointment.doctor.split(" ")[1][0]}
+              {isUpcommingChannelingPending ? (
+                <div className="p-6 flex items-center justify-center">
+                  <svg
+                    className="animate-spin h-8 w-8 text-gray-600"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8H4z"
+                    ></path>
+                  </svg>
+                </div>
+              ) : (
+                <div className="p-6">
+                  <div className="space-y-4 max-h-64 overflow-y-auto">
+                    {upCommingChannelingData.map((appointment, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
+                      >
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold">
+                            <Image
+                              src={
+                                upDoctorData.find(
+                                  (doc) => doc.email === appointment.doctorEmail
+                                )?.profilePicture || "/temp_user.webp"
+                              }
+                              alt="Doctor"
+                              width={40}
+                              height={40}
+                              className="rounded-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900">
+                              Doctor :{" "}
+                              {upDoctorData.find(
+                                (doc) => doc.email === appointment.doctorEmail
+                              )?.name || "Loading..."}
+                            </h4>
+                            <p className="text-sm text-gray-600">
+                              Speciality :{" "}
+                              {upDoctorData.find(
+                                (doc) => doc.email === appointment.doctorEmail
+                              )?.specialization || "Loading..."}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Date & Time : {appointment.channeledDate} •{" "}
+                              {appointment.channeledTime}
+                            </p>
+                          </div>
                         </div>
                         <div>
-                          <h4 className="font-semibold text-gray-900">
-                            {appointment.doctor}
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            {appointment.specialty}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {appointment.date} • {appointment.time}
-                          </p>
+                          <div
+                            className={`px-3 py-1 flex justify-center rounded-full text-xs font-medium ${
+                              appointment.state === false
+                                ? "bg-green-100 text-green-700"
+                                : "bg-yellow-100 text-yellow-700"
+                            }`}
+                          >
+                            {appointment.state ? "Ongoing" : "Upcoming"}
+                          </div>
+                          <div className=" text-sm flex justify-center items-center gap-3 p-5 font-semibold text-gray-800 ">
+                            <Users /> Your Seat : {appointment.patientNumber}
+                          </div>
                         </div>
                       </div>
-                      <div
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          appointment.status === "confirmed"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-yellow-100 text-yellow-700"
-                        }`}
-                      >
-                        {appointment.status}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Latest Channelings - Promotional */}
