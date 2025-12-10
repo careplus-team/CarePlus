@@ -2,6 +2,7 @@
 import { createChannelSchema } from "@/lib/zod-schema/create-channel-schema";
 import { zodResolver } from "@hookform/resolvers/zod/dist/zod.js";
 import React, { startTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Form } from "../ui/form";
 import { z } from "zod";
@@ -46,6 +47,7 @@ import { spec } from "node:test/reporters";
 import { profile } from "console";
 
 const CreateChannelComponent = () => {
+  const router = useRouter();
   const InputGroup = ({
     label,
     children,
@@ -122,6 +124,12 @@ const CreateChannelComponent = () => {
       toast.success("Channel created successfully", {
         className: "bg-green-600 text-white",
       });
+      // Redirect to active sessions so the admin can see the channel immediately
+      try {
+        router.push("/admin/active-sessions");
+      } catch (err) {
+        console.warn("Failed to navigate to active sessions", err);
+      }
     });
 
     form.reset();
