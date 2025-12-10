@@ -4,15 +4,11 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import {
-  ArrowRight,
   Activity,
   Users,
   ShieldCheck,
   Zap,
   Calendar,
-  Heart,
-  Star,
-  ArrowBigDownDash,
   Ambulance,
   Radio,
   Megaphone,
@@ -162,10 +158,10 @@ export default function LandingPage() {
             </div>
 
             {/* Floating Elements */}
-            <div className="absolute -top-10 -right-10 bg-white p-4 rounded-2xl shadow-xl shadow-slate-200/50 animate-bounce duration-[3000ms]">
+            <div className="absolute -top-10 -right-10 bg-white p-4 rounded-2xl shadow-xl shadow-slate-200/50 animate-bounce duration-1000">
               <Activity className="w-6 h-6 text-blue-500" />
             </div>
-            <div className="absolute -bottom-5 -left-5 bg-white p-4 rounded-2xl shadow-xl shadow-slate-200/50 animate-bounce duration-[4000ms]">
+            <div className="absolute -bottom-5 -left-5 bg-white p-4 rounded-2xl shadow-xl shadow-slate-200/50 animate-bounce duration-1000">
               <ShieldCheck className="w-6 h-6 text-emerald-500" />
             </div>
           </div>
