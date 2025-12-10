@@ -30,6 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { set } from "zod";
 
 const ActiveSessionComponent = () => {
   const supabaseClient = createClient();
@@ -118,8 +119,33 @@ const ActiveSessionComponent = () => {
       )
       .subscribe();
 
+    const channelTwo = supabaseClient
+      .channel("realtime:channel-admin")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "channel" },
+        (payload) => {
+          console.log("Realtime channel update:", payload);
+          if (payload.eventType === "INSERT") {
+            setChannelData((prev: any[]) => [payload.new, ...prev]);
+          } else if (payload.eventType === "UPDATE") {
+            setChannelData((prev: any[]) =>
+              prev.map((ch: any) =>
+                ch.id === payload.new.id ? payload.new : ch
+              )
+            );
+          } else if (payload.eventType === "DELETE") {
+            setChannelData((prev: any[]) =>
+              prev.filter((c: any) => c.id !== payload.old.id)
+            );
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
       supabaseClient.removeChannel(channel);
+      supabaseClient.removeChannel(channelTwo);
     };
   }, []);
 
@@ -127,7 +153,7 @@ const ActiveSessionComponent = () => {
     isOpen: boolean;
     title: string;
     message: string;
-    type: "start" | "end" | "reset";
+    type: "start" | "end" | "reset" | "endChannel";
     onConfirm: () => void;
   }>({
     isOpen: false,
@@ -149,6 +175,19 @@ const ActiveSessionComponent = () => {
     });
   };
 
+  // trigger confirm dialog to end a specific channel
+  const triggerEndChannel = (channelId: string) => {
+    console.log("trigger end channel", channelId);
+    setConfirmation({
+      isOpen: true,
+      title: "End Channel?",
+      message:
+        "This will close the selected channel. This action cannot be undone. Are you sure?",
+      type: "endChannel",
+      onConfirm: () => endChannelSession(channelId),
+    });
+  };
+
   //handle end session
   const handleEndSession = async () => {
     try {
@@ -156,7 +195,9 @@ const ActiveSessionComponent = () => {
       const endResult = await axios.post("/api/delete-opd-session-api");
       if (endResult.data.success) {
         toast.success("OPD Session ended successfully.");
-        router.push("/admin/active-sessions");
+        // optimistic UI update: clear local session data and selection
+        setOpdSessionData([]);
+        setSelectedOpd(null);
       } else {
         toast.error("Error ending OPD Session: " + endResult.data.message);
         return;
@@ -164,6 +205,32 @@ const ActiveSessionComponent = () => {
     } catch (e) {
       toast.error("Error ending OPD Session.");
       return;
+    } finally {
+      setInitialLoad(false);
+    }
+  };
+
+  //end Non-OPD channel sessions
+  const endChannelSession = async (channelId: string) => {
+    try {
+      setInitialLoad(true);
+      const endResult = await axios.post("/api/end-channel-api", { channelId });
+      if (endResult.data.success) {
+        toast.success("Channel ended successfully.");
+        // optimistic UI update: remove channel from local state and clear selection
+        setChannelData((prev: any[]) =>
+          prev.filter((c: any) => c.id !== channelId)
+        );
+        if (selected && selected.id === channelId) setSelected(null);
+      } else {
+        toast.error("Error ending channel: " + endResult.data.message);
+        return;
+      }
+    } catch (e) {
+      toast.error("Error ending channel.");
+      return;
+    } finally {
+      setInitialLoad(false);
     }
   };
 
@@ -582,7 +649,10 @@ const ActiveSessionComponent = () => {
                         {/* BUTTONS */}
                         <div className="space-y-3 pt-4 border-t">
                           <div className="">
-                            <button className="flex w-full items-center justify-center space-x-2 px-4 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700">
+                            <button
+                              onClick={() => triggerEndChannel(selected.id)}
+                              className="flex w-full items-center justify-center space-x-2 px-4 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700"
+                            >
                               <UserCheck className="w-4 h-4" />
                               <span>End Channel</span>
                             </button>
@@ -777,7 +847,10 @@ const ActiveSessionComponent = () => {
                         {/* BUTTONS */}
                         <div className="space-y-3 pt-4 border-t">
                           <div className="">
-                            <button className="flex w-full items-center justify-center space-x-2 px-4 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700">
+                            <button
+                              onClick={() => triggerEndChannel(selected.id)}
+                              className="flex w-full items-center justify-center space-x-2 px-4 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700"
+                            >
                               <UserCheck className="w-4 h-4" />
                               <span>End Channel</span>
                             </button>
@@ -813,7 +886,9 @@ const ActiveSessionComponent = () => {
                 setConfirmation((prev) => ({ ...prev, isOpen: false }));
               }}
               className={
-                confirmation.type === "end" || confirmation.type === "reset"
+                confirmation.type === "end" ||
+                confirmation.type === "reset" ||
+                confirmation.type === "endChannel"
                   ? "bg-red-600 hover:bg-red-700"
                   : "bg-emerald-600 hover:bg-emerald-700"
               }
