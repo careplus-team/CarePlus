@@ -7,27 +7,44 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import axios from "axios";
 import { toast } from "sonner";
-import { Users } from "lucide-react";
+import { CalendarCheck, CalendarCheck2, Users } from "lucide-react";
 
 const HomeComponent = () => {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const [userInfo, setUserInfo] = React.useState<any>(null);
-  const [dbUserInfo, setDbUserInfo] = React.useState<any>(null);
-
-  const [isPendingNotice, startTransitionNotice] = useTransition();
-
-  const [notices, setNotices] = useState<any[]>([]);
-
   const supabaseClient = createClient();
 
+  // All useState hooks
+  const [userInfo, setUserInfo] = React.useState<any>(null);
+  const [dbUserInfo, setDbUserInfo] = React.useState<any>(null);
+  const [notices, setNotices] = useState<any[]>([]);
   const [tips, setTips] = useState<any[]>([]);
-  const [isPendingTips, startTransitionTips] = useTransition();
   const [opdSessionData, setOpdSessionData] = useState<any>(null);
-  const [isPendingOpdSession, startTransitionOpdSession] = useTransition();
-
   const [issuing, setIssuing] = useState(false);
   const [lastTicket, setLastTicket] = useState<number | null>(null);
+  const [upCommingChannelingData, setUpCommingChannelingData] = useState<any[]>(
+    []
+  );
+  const [upDoctorData, setUpDoctorData] = useState<any[]>([]);
+  const [isAlreadyBooked, setIsAlreadyBooked] = useState(false);
+  const [userBooking, setUserBooking] = useState<any>(null);
+  const [alreadyBookingAutoTrigger, setAlreadyBookingAutoTrigger] =
+    useState(false);
+  const [availableChannelList, setAvailableChannelList] = useState<any[]>([]);
+  const [availableChannelListDoctorData, setAvailableChannelListDoctorData] =
+    useState<any[]>([]);
+
+  // All useTransition hooks
+  const [isPending, startTransition] = useTransition();
+  const [isPendingNotice, startTransitionNotice] = useTransition();
+  const [isPendingTips, startTransitionTips] = useTransition();
+  const [isPendingOpdSession, startTransitionOpdSession] = useTransition();
+  const [isUpcommingChannelingPending, startTransitionUpcommingChanneling] =
+    useTransition();
+  const [isBookingPending, startBookingTransition] = useTransition();
+  const [isPendingAlraedyBooked, startTransitionAlreadyBooked] =
+    useTransition();
+  const [isAvailableChannelListPending, startChannelListTransition] =
+    useTransition();
 
   useEffect(() => {
     // 1. Fetch initial notices
@@ -154,12 +171,6 @@ const HomeComponent = () => {
   }, []);
 
   // Fetch upcomming channelings for user
-  const [upCommingChannelingData, setUpCommingChannelingData] = useState<any[]>(
-    []
-  );
-  const [upDoctorData, setUpDoctorData] = useState<any[]>([]);
-  const [isUpcommingChannelingPending, startTransitionUpcommingChanneling] =
-    useTransition();
   const fetchUpcommingChannelings = () => {
     startTransitionUpcommingChanneling(async () => {
       if (userInfo?.email == null) {
@@ -266,9 +277,6 @@ const HomeComponent = () => {
     fetchUserInfoFromAuth();
   }, []);
 
-  const [isBookingPending, startBookingTransition] = useTransition();
-  const [alreadyBookingAutoTrigger, setAlreadyBookingAutoTrigger] =
-    useState(false);
   // Handle OPD Booking
   const opdBookingHandler = () => {
     if (opdSessionData == null) {
@@ -294,11 +302,6 @@ const HomeComponent = () => {
   };
 
   //check is OPD session laready booked
-  const [isAlreadyBooked, setIsAlreadyBooked] = useState(false);
-  const [userBooking, setUserBooking] = useState<any>(null);
-  const [isPendingAlraedyBooked, startTransitionAlreadyBooked] =
-    useTransition();
-
   const checkUserAlreadyBookedOPD = async () => {
     if (userInfo?.email == null || opdSessionData == null) {
       return;
@@ -327,6 +330,76 @@ const HomeComponent = () => {
       return;
     }
   });
+
+  //fetch available channel list
+  const fetchAvailableChannelList = () => {
+    startChannelListTransition(async () => {
+      try {
+        const channelListResponse = await axios.post(
+          "/api/get-channel-list-api"
+        );
+        if (channelListResponse.data.success) {
+          console.log("available channel list", channelListResponse.data.data);
+          setAvailableChannelList(channelListResponse.data.data || []);
+          channelListResponse.data.data.forEach(async (channel: any) => {
+            try {
+              const channelListDoctorsData = await axios.post(
+                "/api/doctor-details-get-api",
+                {
+                  email: channel.doctorEmail,
+                }
+              );
+              if (channelListDoctorsData.data.success) {
+                console.log("avDoc", channelListDoctorsData.data.data);
+                setAvailableChannelListDoctorData((prev) => [
+                  ...prev,
+                  channelListDoctorsData.data.data,
+                ]);
+              } else {
+                toast.error(
+                  "Error fetching doctor data for available channel list"
+                );
+                return;
+              }
+            } catch (e) {
+              console.log(
+                "Error fetching doctor data for available channel list",
+                e
+              );
+              toast.error(
+                "Error fetching doctor data for available channel list"
+              );
+              return;
+            }
+          });
+        } else {
+          toast.error("Error fetching available channel list");
+          return;
+        }
+      } catch (error) {
+        toast.error("Error fetching available channel list");
+        return;
+      }
+    });
+  };
+
+  useEffect(() => {
+    fetchAvailableChannelList();
+    const channel = supabaseClient
+      .channel("realtime:availableChannels")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "channel" },
+        (payload) => {
+          fetchAvailableChannelList();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabaseClient.removeChannel(channel);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -680,7 +753,7 @@ const HomeComponent = () => {
                   </svg>
                 </div>
               ) : (
-                <div className="p-6">
+                <div className="p-6 max-h-96 overflow-y-scroll scrollbar-mobile">
                   <div className="space-y-4 max-h-64 overflow-y-auto">
                     {upCommingChannelingData.map((appointment, index) => (
                       <div
@@ -730,8 +803,14 @@ const HomeComponent = () => {
                           >
                             {appointment.state ? "Ongoing" : "Upcoming"}
                           </div>
-                          <div className=" text-sm flex justify-center items-center gap-3 p-5 font-semibold text-gray-800 ">
-                            <Users /> Your Seat : {appointment.patientNumber}
+                          <div className="mt-3 flex items-center justify-center gap-2 px-4 py-2 bg-white rounded-lg border border-slate-200 shadow-sm transition-all hover:shadow-md hover:border-indigo-200">
+                            <Users className="w-4 h-4 text-indigo-500" />
+                            <span className="text-sm font-medium text-slate-600">
+                              Seat No:{" "}
+                              <span className="text-slate-900 font-bold text-base">
+                                {appointment.patientNumber}
+                              </span>
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -773,137 +852,116 @@ const HomeComponent = () => {
                 </div>
               </div>
 
-              <div className="p-6">
+              <div className="p-6 max-h-96 overflow-y-scroll scrollbar-mobile">
                 <div className="grid gap-4">
-                  {[
-                    {
-                      doctor: "Dr. Sarah Johnson",
-                      specialty: "Neurology",
-                      experience: "15+ years",
-                      rating: 4.9,
-                      reviews: 234,
-                      fee: "Rs. 3,500",
-                      availability: "Available Today",
-                      image: "SJ",
-                      highlight: "Brain & Nerve Specialist",
-                    },
-                    {
-                      doctor: "Dr. Michael Chen",
-                      specialty: "Cardiology",
-                      experience: "12+ years",
-                      rating: 4.8,
-                      reviews: 189,
-                      fee: "Rs. 4,200",
-                      availability: "Tomorrow",
-                      image: "MC",
-                      highlight: "Heart Health Expert",
-                    },
-                    {
-                      doctor: "Dr. Priya Sharma",
-                      specialty: "Dermatology",
-                      experience: "10+ years",
-                      rating: 4.7,
-                      reviews: 156,
-                      fee: "Rs. 2,800",
-                      availability: "This Week",
-                      image: "PS",
-                      highlight: "Skin & Beauty Care",
-                    },
-                  ].map((channeling, index) => (
-                    <div
-                      key={index}
-                      className="group bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl p-4 border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 cursor-pointer"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-14 h-14 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                            {channeling.image}
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors">
-                              {channeling.doctor}
-                            </h4>
-                            <p className="text-sm text-blue-600 font-medium">
-                              {channeling.specialty}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {channeling.experience} experience
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-green-600">
-                            {channeling.fee}
-                          </div>
-                          <div
-                            className={`text-xs px-2 py-1 rounded-full font-medium ${
-                              channeling.availability === "Available Today"
-                                ? "bg-green-100 text-green-700"
-                                : channeling.availability === "Tomorrow"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-blue-100 text-blue-700"
-                            }`}
-                          >
-                            {channeling.availability}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-1">
-                            <svg
-                              className="w-4 h-4 text-yellow-400 fill-current"
-                              viewBox="0 0 24 24"
-                            >
-                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                            </svg>
-                            <span className="text-sm font-medium text-gray-700">
-                              {channeling.rating}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              ({channeling.reviews} reviews)
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center space-x-2">
-                          <span className="text-xs font-medium text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
-                            {channeling.highlight}
-                          </span>
-                          <Button
-                            size="sm"
-                            className="bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white text-xs px-4 py-2 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200"
-                          >
-                            Book Now
-                          </Button>
-                        </div>
-                      </div>
+                  {isAvailableChannelListPending ? (
+                    <div className="flex justify-center items-center ">
+                      {" "}
+                      <svg
+                        className="animate-spin h-8 w-8 text-gray-600"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v8H4z"
+                        ></path>
+                      </svg>
                     </div>
-                  ))}
-                </div>
+                  ) : availableChannelList.length === 0 ? (
+                    <div>No available channelings at the moment.</div>
+                  ) : (
+                    availableChannelList.map((channeling, index) => (
+                      <div
+                        key={index}
+                        className="group bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl p-4 border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-14 h-14 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                              <Image
+                                src={
+                                  availableChannelListDoctorData.find(
+                                    (doc) =>
+                                      doc.email === channeling.doctorEmail
+                                  )?.profilePicture || "/temp_user.webp"
+                                }
+                                height={100}
+                                width={100}
+                                alt="Doctor"
+                              />
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors">
+                                {availableChannelListDoctorData.find(
+                                  (doc) => doc.email === channeling.doctorEmail
+                                )?.name || "Loading..."}
+                              </h4>
+                              <p className="text-sm text-blue-600 font-medium">
+                                {availableChannelListDoctorData.find(
+                                  (doc) => doc.email === channeling.doctorEmail
+                                )?.specialization || "Loading..."}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {availableChannelListDoctorData.find(
+                                  (doc) => doc.email === channeling.doctorEmail
+                                )?.workplace || "Loading..."}
+                              </p>
+                            </div>
+                          </div>
 
-                <div className="mt-6 text-center">
-                  <Button
-                    variant="outline"
-                    className="border-2 border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 font-semibold px-6 py-3 rounded-xl"
-                  >
-                    <svg
-                      className="w-5 h-5 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 6h16M4 10h16M4 14h16M4 18h16"
-                      />
-                    </svg>
-                    View All Channelings
-                  </Button>
+                          <div className="text-right flex flex-col items-end space-y-1">
+                            <div className="text-lg font-bold text-green-600">
+                              {channeling.fee || "Free Channel"} LKR
+                            </div>
+                            <div
+                              className={`text-sm px-2 py-1 w-fit rounded-full font-medium ${
+                                channeling.state === "inactive"
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-blue-100 text-blue-700"
+                              }`}
+                            >
+                              {channeling.state || ""}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-1">
+                              <CalendarCheck2 className="w-5 h-5 text-gray-400" />
+                              <span className="text-sm font-medium text-gray-700">
+                                {channeling.rating}
+                              </span>
+                              <span className="text-sm text-gray-500">
+                                {channeling.date || ""} at{" "}
+                                {channeling.time || ""}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              size="sm"
+                              className="bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white text-xs px-4 py-2 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+                            >
+                              Book Now
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -966,7 +1024,7 @@ const HomeComponent = () => {
               </div>
 
               <div className="p-6 h-full">
-                <div className="space-y-4 max-h-80 overflow-y-auto">
+                <div className="space-y-4 max-h-80 overflow-y-auto scrollbar-mobile">
                   {isPendingNotice ? (
                     <div className="space-y-4">
                       {Array.from({ length: 3 }).map((_, index) => (
