@@ -5,24 +5,46 @@ import Image from "next/image";
 import { Button } from "../../ui/button";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { start } from "node:repl";
 import axios from "axios";
 import { toast } from "sonner";
+import { CalendarCheck, CalendarCheck2, Users } from "lucide-react";
 
 const HomeComponent = () => {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const [userInfo, setUserInfo] = React.useState<any>(null);
-  const [dbUserInfo, setDbUserInfo] = React.useState<any>(null);
-
-  const [isPendingNotice, startTransitionNotice] = useTransition();
-
-  const [notices, setNotices] = useState<any[]>([]);
-
   const supabaseClient = createClient();
 
+  // All useState hooks
+  const [userInfo, setUserInfo] = React.useState<any>(null);
+  const [dbUserInfo, setDbUserInfo] = React.useState<any>(null);
+  const [notices, setNotices] = useState<any[]>([]);
   const [tips, setTips] = useState<any[]>([]);
+  const [opdSessionData, setOpdSessionData] = useState<any>(null);
+  const [issuing, setIssuing] = useState(false);
+  const [lastTicket, setLastTicket] = useState<number | null>(null);
+  const [upCommingChannelingData, setUpCommingChannelingData] = useState<any[]>(
+    []
+  );
+  const [upDoctorData, setUpDoctorData] = useState<any[]>([]);
+  const [isAlreadyBooked, setIsAlreadyBooked] = useState(false);
+  const [userBooking, setUserBooking] = useState<any>(null);
+  const [alreadyBookingAutoTrigger, setAlreadyBookingAutoTrigger] =
+    useState(false);
+  const [availableChannelList, setAvailableChannelList] = useState<any[]>([]);
+  const [availableChannelListDoctorData, setAvailableChannelListDoctorData] =
+    useState<any[]>([]);
+
+  // All useTransition hooks
+  const [isPending, startTransition] = useTransition();
+  const [isPendingNotice, startTransitionNotice] = useTransition();
   const [isPendingTips, startTransitionTips] = useTransition();
+  const [isPendingOpdSession, startTransitionOpdSession] = useTransition();
+  const [isUpcommingChannelingPending, startTransitionUpcommingChanneling] =
+    useTransition();
+  const [isBookingPending, startBookingTransition] = useTransition();
+  const [isPendingAlraedyBooked, startTransitionAlreadyBooked] =
+    useTransition();
+  const [isAvailableChannelListPending, startChannelListTransition] =
+    useTransition();
 
   useEffect(() => {
     // 1. Fetch initial notices
@@ -106,6 +128,102 @@ const HomeComponent = () => {
     };
   }, []);
 
+  //get realtime OPD session data
+
+  useEffect(() => {
+    //fetch initial OPD session data from DB
+    startTransitionOpdSession(async () => {
+      const opdSessionInfo = await axios.post("/api/get-opd-session-api");
+      console.log("OPD session inspect", opdSessionInfo.data.success);
+      if (opdSessionInfo.data.success) {
+        setOpdSessionData(opdSessionInfo.data.data[0]);
+        console.log("OPD session data", opdSessionInfo.data.data);
+      } else {
+        toast.error("Error fetching OPD session data");
+        return;
+      }
+    });
+
+    //subscribe for realtime updates
+    const channel = supabaseClient
+      .channel("realtime:opdsession")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "opdsession" },
+        (payload) => {
+          console.log("Realtime OPD session update:", payload);
+          if (payload.eventType === "UPDATE") {
+            setOpdSessionData(payload.new);
+          } else if (payload.eventType === "INSERT") {
+            setOpdSessionData(payload.new);
+          } else if (payload.eventType === "DELETE") {
+            setOpdSessionData(null);
+          }
+          console.log("inspect state", opdSessionData);
+          console.log("Realtime update:", payload.new);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabaseClient.removeChannel(channel);
+    };
+  }, []);
+
+  // Fetch upcomming channelings for user
+  const fetchUpcommingChannelings = () => {
+    startTransitionUpcommingChanneling(async () => {
+      if (userInfo?.email == null) {
+        return;
+      }
+      const response = await axios.post(
+        "/api/get-user-upcomming-channelings-api",
+        {
+          patientEmail: userInfo?.email,
+        }
+      );
+      if (response.data.success) {
+        console.log("upcomming channelings", response.data.data);
+        setUpCommingChannelingData(response.data.data || []);
+        response.data.data.forEach(async (channeling: any) => {
+          const daoctorData = await axios.post("/api/doctor-details-get-api", {
+            email: channeling.doctorEmail,
+          });
+          if (daoctorData.data.success) {
+            setUpDoctorData((prev) => [...prev, daoctorData.data.data]);
+          } else {
+            toast.error("Error fetching doctor data for upcomming channelings");
+            return;
+          }
+        });
+      } else {
+        setUpCommingChannelingData([]);
+        toast.error("Error fetching upcomming channelings");
+        return;
+      }
+      console.log("fetched upcomming channelings", response.data);
+    });
+  };
+
+  useEffect(() => {
+    fetchUpcommingChannelings();
+
+    //add realtime subscription to patient_channeling table
+    const channel = supabaseClient
+      .channel("realtime:patient_channeling")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "patient_channeling" },
+        (payload) => {
+          console.log("Realtime patient_channeling update:", payload);
+          fetchUpcommingChannelings();
+        }
+      )
+      .subscribe();
+    return () => {
+      supabaseClient.removeChannel(channel);
+    };
+  }, [userInfo]);
   const getUserInfoFromDb = (email: any) => {
     startTransition(async () => {
       const client = createClient();
@@ -114,20 +232,33 @@ const HomeComponent = () => {
         .from("user")
         .select("*")
         .eq("email", email);
-      setDbUserInfo(dbUserInfo.data ? dbUserInfo.data[0] : null);
-      console.log(dbUserInfo);
+      if (dbUserInfo.data) {
+        if (dbUserInfo.data?.length <= 0) {
+          const doctorInfor = await axios.post("/api/doctor-details-get-api", {
+            email,
+          });
+          setDbUserInfo(doctorInfor.data.data);
+        } else {
+          setDbUserInfo(dbUserInfo.data ? dbUserInfo.data[0] : null);
+          console.log(dbUserInfo);
+        }
+      } else {
+        toast.error("Error fetching user data from database");
+        return;
+      }
     });
   };
 
   const fetchUserInfoFromAuth = () => {
     startTransition(async () => {
       const client = createClient();
-      const userAuthInfo = await client.auth.getClaims();
-      setUserInfo(userAuthInfo);
-      console.log("haree1");
-      if (userAuthInfo?.data?.claims?.email != null) {
-        console.log("hree", userAuthInfo?.data?.claims?.email);
-        getUserInfoFromDb(userAuthInfo?.data?.claims?.email);
+      const { data, error } = await client.auth.getUser();
+      console.log("user auth info", data);
+      setUserInfo(data.user);
+
+      if (data?.user?.email != null) {
+        console.log("hree", data.user.email);
+        getUserInfoFromDb(data.user.email);
       }
     });
   };
@@ -144,6 +275,130 @@ const HomeComponent = () => {
 
   useEffect(() => {
     fetchUserInfoFromAuth();
+  }, []);
+
+  // Handle OPD Booking
+  const opdBookingHandler = () => {
+    if (opdSessionData == null) {
+      return;
+    }
+    startBookingTransition(async () => {
+      try {
+        const response = await axios.post("/api/opd-booking-by-user-api", {
+          userEmail: userInfo?.email,
+          sessionId: opdSessionData.id,
+        });
+        if (response.data.success) {
+          setAlreadyBookingAutoTrigger(!alreadyBookingAutoTrigger);
+          toast.success("OPD slot booked successfully!");
+        } else {
+          toast.error(response.data.message || "Error booking OPD slot");
+        }
+      } catch (error) {
+        toast.error("Error booking OPD slot");
+        return;
+      }
+    });
+  };
+
+  //check is OPD session laready booked
+  const checkUserAlreadyBookedOPD = async () => {
+    if (userInfo?.email == null || opdSessionData == null) {
+      return;
+    }
+    startTransitionAlreadyBooked(async () => {
+      const response = await axios.post("/api/check-already-booked-opd-api", {
+        email: userInfo?.email,
+      });
+      if (response.data.success && response.data.data.length > 0) {
+        console.log("already booked data", response.data.data);
+        setIsAlreadyBooked(true);
+        setUserBooking(response.data.data[0]);
+      } else {
+        setIsAlreadyBooked(false);
+        setUserBooking(null);
+      }
+    });
+  };
+
+  useEffect(() => {
+    checkUserAlreadyBookedOPD();
+  }, [userInfo, opdSessionData, alreadyBookingAutoTrigger]);
+
+  useEffect(() => {
+    if (opdSessionData != null) {
+      return;
+    }
+  });
+
+  //fetch available channel list
+  const fetchAvailableChannelList = () => {
+    startChannelListTransition(async () => {
+      try {
+        const channelListResponse = await axios.post(
+          "/api/get-channel-list-api"
+        );
+        if (channelListResponse.data.success) {
+          console.log("available channel list", channelListResponse.data.data);
+          setAvailableChannelList(channelListResponse.data.data || []);
+          channelListResponse.data.data.forEach(async (channel: any) => {
+            try {
+              const channelListDoctorsData = await axios.post(
+                "/api/doctor-details-get-api",
+                {
+                  email: channel.doctorEmail,
+                }
+              );
+              if (channelListDoctorsData.data.success) {
+                console.log("avDoc", channelListDoctorsData.data.data);
+                setAvailableChannelListDoctorData((prev) => [
+                  ...prev,
+                  channelListDoctorsData.data.data,
+                ]);
+              } else {
+                toast.error(
+                  "Error fetching doctor data for available channel list"
+                );
+                return;
+              }
+            } catch (e) {
+              console.log(
+                "Error fetching doctor data for available channel list",
+                e
+              );
+              toast.error(
+                "Error fetching doctor data for available channel list"
+              );
+              return;
+            }
+          });
+        } else {
+          toast.error("Error fetching available channel list");
+          return;
+        }
+      } catch (error) {
+        toast.error("Error fetching available channel list");
+        return;
+      }
+    });
+  };
+
+  useEffect(() => {
+    fetchAvailableChannelList();
+    const channel = supabaseClient
+      .channel("realtime:availableChannels")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "channel" },
+        (payload) => {
+          fetchAvailableChannelList();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabaseClient.removeChannel(channel);
+    };
   }, []);
 
   return (
@@ -217,52 +472,11 @@ const HomeComponent = () => {
                   </div>
                 </div>
               </div>
-
-              <div className="p-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  {/* Doctor Info */}
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="flex items-center space-x-4 mb-4">
-                      <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                        DS
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-gray-900">
-                          Dr. Sutharan
-                        </h4>
-                        <p className="text-blue-600 font-medium">Cardiology</p>
-                        <p className="text-sm text-gray-600">
-                          MBBS • Reg: 123456
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Queue Details */}
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                      <span className="text-gray-600">Total Seats</span>
-                      <span className="font-bold text-blue-600">100</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
-                      <span className="text-gray-600">Current Queue</span>
-                      <span className="font-bold text-orange-600">45</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                      <span className="text-gray-600">Available Position</span>
-                      <span className="font-bold text-green-600">85</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
-                      <span className="text-gray-600">Est. Wait Time</span>
-                      <span className="font-bold text-purple-600">30 mins</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-6">
-                  <Button className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200">
+              {opdSessionData == null ? (
+                <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                  <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
                     <svg
-                      className="w-5 h-5 mr-2"
+                      className="w-8 h-8 text-slate-400"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -270,14 +484,175 @@ const HomeComponent = () => {
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                        strokeWidth={1.5}
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    Reserve Position #85
-                  </Button>
+                  </div>
+                  <h3 className="text-lg font-medium text-slate-900">
+                    No Active Session
+                  </h3>
+                  <p className="text-slate-500 mt-1 text-sm max-w-xs">
+                    The OPD queue is currently closed. Please check again after
+                    while .
+                  </p>
                 </div>
-              </div>
+              ) : (
+                <div className="p-6">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* Doctor Info */}
+                    <div className="bg-slate-50 rounded-xl p-4">
+                      <div className="flex items-center space-x-4 mb-4">
+                        <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                          DS
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-gray-900">
+                            {opdSessionData?.doctorName || "Loading..."}
+                          </h4>
+                          <p className="text-blue-600 font-medium">
+                            Cardiology
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            MBBS • Reg: 123456
+                          </p>
+                          <p>Notes</p>
+                          <p>{opdSessionData?.notes || "Loading..."}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Queue Details */}
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                        <span className="text-gray-600">Total Seats</span>
+                        <span className="font-bold text-blue-600">
+                          {opdSessionData?.orginalSlotsCount || "Loading..."}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
+                        <span className="text-gray-600">Current Token</span>
+                        <span className="font-bold text-orange-600">
+                          {opdSessionData?.numberOfPatientsSlots || "0"}
+                        </span>
+                      </div>
+
+                      {userBooking ? (
+                        <>
+                          <div className="flex justify-between items-center p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+                            <span className="text-gray-600 font-medium">
+                              Your Token
+                            </span>
+                            <span className="font-bold text-indigo-600 text-lg">
+                              {userBooking.bookingNumber}
+                            </span>
+                          </div>
+
+                          <div
+                            className={`flex justify-between items-center p-3 rounded-lg border ${
+                              Number(opdSessionData?.numberOfPatientsSlots) ===
+                              Number(userBooking.bookingNumber)
+                                ? "bg-green-50 border-green-200"
+                                : Number(
+                                    opdSessionData?.numberOfPatientsSlots
+                                  ) > Number(userBooking.bookingNumber)
+                                ? "bg-red-50 border-red-200"
+                                : "bg-purple-50 border-purple-200"
+                            }`}
+                          >
+                            <span className="text-gray-600 font-medium">
+                              Status
+                            </span>
+                            <span
+                              className={`font-bold ${
+                                Number(
+                                  opdSessionData?.numberOfPatientsSlots
+                                ) === Number(userBooking.bookingNumber)
+                                  ? "text-green-600 animate-pulse"
+                                  : Number(
+                                      opdSessionData?.numberOfPatientsSlots
+                                    ) > Number(userBooking.bookingNumber)
+                                  ? "text-red-600"
+                                  : "text-purple-600"
+                              }`}
+                            >
+                              {Number(opdSessionData?.numberOfPatientsSlots) ===
+                              Number(userBooking.bookingNumber)
+                                ? "It's Your Turn!"
+                                : Number(
+                                    opdSessionData?.numberOfPatientsSlots
+                                  ) > Number(userBooking.bookingNumber)
+                                ? "Your Turn Passed"
+                                : `${
+                                    (Number(userBooking.bookingNumber) -
+                                      Number(
+                                        opdSessionData?.numberOfPatientsSlots
+                                      )) *
+                                      Number(
+                                        opdSessionData?.estimatedTimePerPatient ||
+                                          5
+                                      ) +
+                                    " mins wait"
+                                  }`}
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                            <span className="text-gray-600">
+                              Next Available Token
+                            </span>
+                            <span className="font-bold text-green-600">
+                              {(opdSessionData?.lastIssuedToken || 0) + 1}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
+                            <span className="text-gray-600">
+                              Est. Wait Time
+                            </span>
+                            <span className="font-bold text-purple-600">
+                              {((opdSessionData?.lastIssuedToken || 0) +
+                                1 -
+                                opdSessionData?.numberOfPatientsSlots) *
+                                (opdSessionData?.estimatedTimePerPatient || 0) +
+                                " minutes" || "Loading..."}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-6">
+                    <Button
+                      disabled={
+                        isPendingAlraedyBooked ||
+                        isAlreadyBooked ||
+                        isBookingPending
+                      }
+                      onClick={opdBookingHandler}
+                      className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200"
+                    >
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                        />
+                      </svg>
+                      Reserve Position{" "}
+                      {(opdSessionData?.lastIssuedToken || 0) + 1}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Quick Actions Mobile */}
@@ -354,72 +729,95 @@ const HomeComponent = () => {
                   </div>
                 </div>
               </div>
-
-              <div className="p-6">
-                <div className="space-y-4 max-h-64 overflow-y-auto">
-                  {[
-                    {
-                      doctor: "Dr. Sutharan",
-                      specialty: "Cardiology",
-                      date: "20th Oct 2023",
-                      time: "10:00 AM",
-                      status: "confirmed",
-                    },
-                    {
-                      doctor: "Dr. Priya",
-                      specialty: "Dermatology",
-                      date: "22nd Oct 2023",
-                      time: "2:30 PM",
-                      status: "pending",
-                    },
-                    {
-                      doctor: "Dr. Kumar",
-                      specialty: "Orthopedics",
-                      date: "25th Oct 2023",
-                      time: "11:15 AM",
-                      status: "confirmed",
-                    },
-                    {
-                      doctor: "Dr. Silva",
-                      specialty: "Neurology",
-                      date: "28th Oct 2023",
-                      time: "9:00 AM",
-                      status: "confirmed",
-                    },
-                  ].map((appointment, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
-                    >
-                      <div className="flex items-center space-x-4">
-                        <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold">
-                          {appointment.doctor.split(" ")[1][0]}
+              {isUpcommingChannelingPending ? (
+                <div className="p-6 flex items-center justify-center">
+                  <svg
+                    className="animate-spin h-8 w-8 text-gray-600"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8H4z"
+                    ></path>
+                  </svg>
+                </div>
+              ) : (
+                <div className="p-6 max-h-96 overflow-y-scroll scrollbar-mobile">
+                  <div className="space-y-4 max-h-64 overflow-y-auto">
+                    {upCommingChannelingData.map((appointment, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
+                      >
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold">
+                            <Image
+                              src={
+                                upDoctorData.find(
+                                  (doc) => doc.email === appointment.doctorEmail
+                                )?.profilePicture || "/temp_user.webp"
+                              }
+                              alt="Doctor"
+                              width={40}
+                              height={40}
+                              className="rounded-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900">
+                              Doctor :{" "}
+                              {upDoctorData.find(
+                                (doc) => doc.email === appointment.doctorEmail
+                              )?.name || "Loading..."}
+                            </h4>
+                            <p className="text-sm text-gray-600">
+                              Speciality :{" "}
+                              {upDoctorData.find(
+                                (doc) => doc.email === appointment.doctorEmail
+                              )?.specialization || "Loading..."}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Date & Time : {appointment.channeledDate} •{" "}
+                              {appointment.channeledTime}
+                            </p>
+                          </div>
                         </div>
                         <div>
-                          <h4 className="font-semibold text-gray-900">
-                            {appointment.doctor}
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            {appointment.specialty}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {appointment.date} • {appointment.time}
-                          </p>
+                          <div
+                            className={`px-3 py-1 flex justify-center rounded-full text-xs font-medium ${
+                              appointment.state === false
+                                ? "bg-green-100 text-green-700"
+                                : "bg-yellow-100 text-yellow-700"
+                            }`}
+                          >
+                            {appointment.state ? "Ongoing" : "Upcoming"}
+                          </div>
+                          <div className="mt-3 flex items-center justify-center gap-2 px-4 py-2 bg-white rounded-lg border border-slate-200 shadow-sm transition-all hover:shadow-md hover:border-indigo-200">
+                            <Users className="w-4 h-4 text-indigo-500" />
+                            <span className="text-sm font-medium text-slate-600">
+                              Seat No:{" "}
+                              <span className="text-slate-900 font-bold text-base">
+                                {appointment.patientNumber}
+                              </span>
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      <div
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          appointment.status === "confirmed"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-yellow-100 text-yellow-700"
-                        }`}
-                      >
-                        {appointment.status}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Latest Channelings - Promotional */}
@@ -454,137 +852,116 @@ const HomeComponent = () => {
                 </div>
               </div>
 
-              <div className="p-6">
+              <div className="p-6 max-h-96 overflow-y-scroll scrollbar-mobile">
                 <div className="grid gap-4">
-                  {[
-                    {
-                      doctor: "Dr. Sarah Johnson",
-                      specialty: "Neurology",
-                      experience: "15+ years",
-                      rating: 4.9,
-                      reviews: 234,
-                      fee: "Rs. 3,500",
-                      availability: "Available Today",
-                      image: "SJ",
-                      highlight: "Brain & Nerve Specialist",
-                    },
-                    {
-                      doctor: "Dr. Michael Chen",
-                      specialty: "Cardiology",
-                      experience: "12+ years",
-                      rating: 4.8,
-                      reviews: 189,
-                      fee: "Rs. 4,200",
-                      availability: "Tomorrow",
-                      image: "MC",
-                      highlight: "Heart Health Expert",
-                    },
-                    {
-                      doctor: "Dr. Priya Sharma",
-                      specialty: "Dermatology",
-                      experience: "10+ years",
-                      rating: 4.7,
-                      reviews: 156,
-                      fee: "Rs. 2,800",
-                      availability: "This Week",
-                      image: "PS",
-                      highlight: "Skin & Beauty Care",
-                    },
-                  ].map((channeling, index) => (
-                    <div
-                      key={index}
-                      className="group bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl p-4 border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 cursor-pointer"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-14 h-14 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                            {channeling.image}
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors">
-                              {channeling.doctor}
-                            </h4>
-                            <p className="text-sm text-blue-600 font-medium">
-                              {channeling.specialty}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {channeling.experience} experience
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-green-600">
-                            {channeling.fee}
-                          </div>
-                          <div
-                            className={`text-xs px-2 py-1 rounded-full font-medium ${
-                              channeling.availability === "Available Today"
-                                ? "bg-green-100 text-green-700"
-                                : channeling.availability === "Tomorrow"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-blue-100 text-blue-700"
-                            }`}
-                          >
-                            {channeling.availability}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-1">
-                            <svg
-                              className="w-4 h-4 text-yellow-400 fill-current"
-                              viewBox="0 0 24 24"
-                            >
-                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                            </svg>
-                            <span className="text-sm font-medium text-gray-700">
-                              {channeling.rating}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              ({channeling.reviews} reviews)
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center space-x-2">
-                          <span className="text-xs font-medium text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
-                            {channeling.highlight}
-                          </span>
-                          <Button
-                            size="sm"
-                            className="bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white text-xs px-4 py-2 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200"
-                          >
-                            Book Now
-                          </Button>
-                        </div>
-                      </div>
+                  {isAvailableChannelListPending ? (
+                    <div className="flex justify-center items-center ">
+                      {" "}
+                      <svg
+                        className="animate-spin h-8 w-8 text-gray-600"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v8H4z"
+                        ></path>
+                      </svg>
                     </div>
-                  ))}
-                </div>
+                  ) : availableChannelList.length === 0 ? (
+                    <div>No available channelings at the moment.</div>
+                  ) : (
+                    availableChannelList.map((channeling, index) => (
+                      <div
+                        key={index}
+                        className="group bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl p-4 border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-14 h-14 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                              <Image
+                                src={
+                                  availableChannelListDoctorData.find(
+                                    (doc) =>
+                                      doc.email === channeling.doctorEmail
+                                  )?.profilePicture || "/temp_user.webp"
+                                }
+                                height={100}
+                                width={100}
+                                alt="Doctor"
+                              />
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors">
+                                {availableChannelListDoctorData.find(
+                                  (doc) => doc.email === channeling.doctorEmail
+                                )?.name || "Loading..."}
+                              </h4>
+                              <p className="text-sm text-blue-600 font-medium">
+                                {availableChannelListDoctorData.find(
+                                  (doc) => doc.email === channeling.doctorEmail
+                                )?.specialization || "Loading..."}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {availableChannelListDoctorData.find(
+                                  (doc) => doc.email === channeling.doctorEmail
+                                )?.workplace || "Loading..."}
+                              </p>
+                            </div>
+                          </div>
 
-                <div className="mt-6 text-center">
-                  <Button
-                    variant="outline"
-                    className="border-2 border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 font-semibold px-6 py-3 rounded-xl"
-                  >
-                    <svg
-                      className="w-5 h-5 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 6h16M4 10h16M4 14h16M4 18h16"
-                      />
-                    </svg>
-                    View All Channelings
-                  </Button>
+                          <div className="text-right flex flex-col items-end space-y-1">
+                            <div className="text-lg font-bold text-green-600">
+                              {channeling.fee || "Free Channel"} LKR
+                            </div>
+                            <div
+                              className={`text-sm px-2 py-1 w-fit rounded-full font-medium ${
+                                channeling.state === "inactive"
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-blue-100 text-blue-700"
+                              }`}
+                            >
+                              {channeling.state || ""}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-1">
+                              <CalendarCheck2 className="w-5 h-5 text-gray-400" />
+                              <span className="text-sm font-medium text-gray-700">
+                                {channeling.rating}
+                              </span>
+                              <span className="text-sm text-gray-500">
+                                {channeling.date || ""} at{" "}
+                                {channeling.time || ""}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              size="sm"
+                              className="bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white text-xs px-4 py-2 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+                            >
+                              Book Now
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -647,7 +1024,7 @@ const HomeComponent = () => {
               </div>
 
               <div className="p-6 h-full">
-                <div className="space-y-4 max-h-80 overflow-y-auto">
+                <div className="space-y-4 max-h-80 overflow-y-auto scrollbar-mobile">
                   {isPendingNotice ? (
                     <div className="space-y-4">
                       {Array.from({ length: 3 }).map((_, index) => (
