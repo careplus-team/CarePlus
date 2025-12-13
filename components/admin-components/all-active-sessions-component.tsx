@@ -794,7 +794,7 @@ const ActiveSessionComponent = () => {
       )}
       <AlertDialog
         open={confirmation.isOpen}
-        onOpenChange={(isOpen) =>
+        onOpenChange={(isOpen:any) =>
           setConfirmation((prev) => ({ ...prev, isOpen }))
         }
       >
