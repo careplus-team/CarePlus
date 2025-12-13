@@ -40,7 +40,6 @@ import axios from "axios";
 import { CldUploadWidget } from "next-cloudinary";
 import Image from "next/image";
 import { Textarea } from "@/components/ui/textarea";
-import { is } from "date-fns/locale";
 import { doctorRegistrationSchema } from "@/lib/zod-schema/doctor-registration-schema";
 import z from "zod";
 
