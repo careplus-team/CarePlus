@@ -6,6 +6,7 @@ export async function POST() {
     const channelListData = await supabaseServer
       .from("channel")
       .select("*")
+      .neq("state", "ended")
 
       .order("created_at", { ascending: false });
     if (channelListData.error) {
