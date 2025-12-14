@@ -43,16 +43,26 @@ export async function POST(req: NextRequest) {
       .insert({
         channelId,
         userEmail,
-        seatNumber: currentChannelData.data?.currentNumber,
+        seatNumber:
+          currentChannelData.data?.totalSlots -
+          currentChannelData.data?.remainingSlots +
+          1,
         note: note,
       })
       .select("*")
       .maybeSingle();
+    if (!createdAppoinments.data) {
+      return NextResponse.json({
+        data: null,
+        error: "Failed to create appointment",
+        success: false,
+        message: "Failed to create appointment",
+      });
+    }
 
     const updatedChannelDetails = await supabaseServer
       .from("channel")
       .update({
-        currentNumber: currentChannelData.data?.currentNumber + 1,
         remainingSlots: currentChannelData.data?.remainingSlots - 1,
       })
       .eq("id", channelId);
