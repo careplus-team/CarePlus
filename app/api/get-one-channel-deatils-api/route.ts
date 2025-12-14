@@ -16,6 +16,13 @@ export async function POST(req: NextRequest) {
         message: channelDetailsData.error.message,
       });
     }
+    if (!channelDetailsData.data) {
+      return NextResponse.json({
+        data: null,
+        success: false,
+        message: "No channel found with the provided ID",
+      });
+    }
     return NextResponse.json({
       data: channelDetailsData.data,
       success: true,
