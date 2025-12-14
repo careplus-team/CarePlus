@@ -23,8 +23,19 @@ import axios from "axios";
 import { toast } from "sonner";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { start } from "repl";
 import { Button } from "@/components/ui/button";
+import { start } from "repl";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function ChannelVisitedPatientUpdate({
   channelId,
@@ -151,6 +162,10 @@ export default function ChannelVisitedPatientUpdate({
   const [patientData, setPatientData] = useState<any>(null);
   const [patientPersonalData, setPatientPersonalData] = useState<any>(null);
   const [attendingMarking, startAttendingMarking] = useTransition();
+  const [startDialogOpen, setStartDialogOpen] = useState(false);
+  const [endDialogOpen, setEndDialogOpen] = useState(false);
+  const [slotDialogOpen, setSlotDialogOpen] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   const getPatientData = (id: number) => {
     startPatientDataLoading(async () => {
       console.log("Fetching data for patient number:", id);
@@ -358,59 +373,113 @@ export default function ChannelVisitedPatientUpdate({
 
               {/* Action Buttons */}
               <div className="w-full space-y-3">
-                <button
-                  onClick={startChannel}
-                  disabled={isSessionActive || isPending}
-                  className={`group relative w-full h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-base transition-all duration-300 shadow-lg
-                    ${
-                      isPending
-                        ? "bg-slate-100 text-slate-300 cursor-not-allowed shadow-none scale-95"
-                        : isSessionActive
-                        ? "bg-slate-100 text-slate-300 cursor-not-allowed shadow-none scale-95"
-                        : "bg-gradient-to-r from-teal-500 to-emerald-500 text-white  hover:-translate-y-1 hover:shadow-xl"
-                    }`}
+                <AlertDialog
+                  open={startDialogOpen}
+                  onOpenChange={setStartDialogOpen}
                 >
-                  <div
-                    className={`p-0.5 rounded-full ${
-                      isSessionActive ? "bg-slate-200" : "bg-white/20"
-                    }`}
-                  >
-                    <Play
-                      size={16}
-                      className={
-                        isSessionActive ? "text-slate-400" : "fill-current"
-                      }
-                    />
-                  </div>
-                  Start Session
-                </button>
+                  <AlertDialogTrigger asChild>
+                    <button
+                      disabled={isSessionActive || isPending}
+                      className={`group relative w-full h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-base transition-all duration-300 shadow-lg
+                        ${
+                          isPending
+                            ? "bg-slate-100 text-slate-300 cursor-not-allowed shadow-none scale-95"
+                            : isSessionActive
+                            ? "bg-slate-100 text-slate-300 cursor-not-allowed shadow-none scale-95"
+                            : "bg-gradient-to-r from-teal-500 to-emerald-500 text-white  hover:-translate-y-1 hover:shadow-xl"
+                        }`}
+                    >
+                      <div
+                        className={`p-0.5 rounded-full ${
+                          isSessionActive ? "bg-slate-200" : "bg-white/20"
+                        }`}
+                      >
+                        <Play
+                          size={16}
+                          className={
+                            isSessionActive ? "text-slate-400" : "fill-current"
+                          }
+                        />
+                      </div>
+                      Start Session
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Start Channel Session</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to start the channel session? This
+                        will make the session live and allow patients to be
+                        marked as visited.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => {
+                          startChannel();
+                          setStartDialogOpen(false);
+                        }}
+                      >
+                        Start
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
 
-                <button
-                  onClick={endChannel}
-                  disabled={!isSessionActive || isPending}
-                  className={`group relative w-full h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-base transition-all duration-300 shadow-lg
-                    ${
-                      isPending
-                        ? "bg-slate-100 text-slate-300 cursor-not-allowed shadow-none scale-95"
-                        : !isSessionActive
-                        ? "bg-slate-100 text-slate-300 cursor-not-allowed shadow-none scale-95"
-                        : "bg-white border-2 border-rose-100 text-rose-500 hover:bg-rose-50 hover:border-rose-200  hover:-translate-y-1 hover:shadow-xl"
-                    }`}
+                <AlertDialog
+                  open={endDialogOpen}
+                  onOpenChange={setEndDialogOpen}
                 >
-                  <div
-                    className={`p-0.5 rounded-full ${
-                      !isSessionActive ? "bg-slate-200" : "bg-rose-100"
-                    }`}
-                  >
-                    <Square
-                      size={16}
-                      className={
-                        !isSessionActive ? "text-slate-400" : "fill-current"
-                      }
-                    />
-                  </div>
-                  End Session
-                </button>
+                  <AlertDialogTrigger asChild>
+                    <button
+                      disabled={!isSessionActive || isPending}
+                      className={`group relative w-full h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-base transition-all duration-300 shadow-lg
+                        ${
+                          isPending
+                            ? "bg-slate-100 text-slate-300 cursor-not-allowed shadow-none scale-95"
+                            : !isSessionActive
+                            ? "bg-slate-100 text-slate-300 cursor-not-allowed shadow-none scale-95"
+                            : "bg-white border-2 border-rose-100 text-rose-500 hover:bg-rose-50 hover:border-rose-200  hover:-translate-y-1 hover:shadow-xl"
+                        }`}
+                    >
+                      <div
+                        className={`p-0.5 rounded-full ${
+                          !isSessionActive ? "bg-slate-200" : "bg-rose-100"
+                        }`}
+                      >
+                        <Square
+                          size={16}
+                          className={
+                            !isSessionActive ? "text-slate-400" : "fill-current"
+                          }
+                        />
+                      </div>
+                      End Session
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>End Channel Session</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to end the channel session? This
+                        action cannot be undone and will close the session for
+                        all patients.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => {
+                          endChannel();
+                          setEndDialogOpen(false);
+                        }}
+                      >
+                        End
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           </div>
@@ -598,7 +667,10 @@ export default function ChannelVisitedPatientUpdate({
                       patientDataLoading ||
                       !isSessionActive
                     }
-                    onClick={() => getPatientData(index)}
+                    onClick={() => {
+                      setSelectedSlot(index);
+                      setSlotDialogOpen(true);
+                    }}
                     key={index}
                     className={`
                   relative p-10 mt-8 bg-transparent hover:bg-blue-200 hover:border-blue-600  rounded-lg border-2 transition-all duration-300 cursor-pointer aspect-square flex items-center justify-center
@@ -645,6 +717,31 @@ export default function ChannelVisitedPatientUpdate({
           )}
         </div>
       </div>
+
+      {/* Confirmation Dialogs */}
+      <AlertDialog open={slotDialogOpen} onOpenChange={setSlotDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark Patient as Visited</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to mark patient{" "}
+              {selectedSlot !== null ? selectedSlot + 1 : ""} as visited? This
+              will update their status and cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (selectedSlot !== null) getPatientData(selectedSlot);
+                setSlotDialogOpen(false);
+              }}
+            >
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
