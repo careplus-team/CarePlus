@@ -4,7 +4,7 @@ import ChannelBookingComponent from "@/components/user-compoents/channel-book/ch
 const ChannelBooking = () => {
   return (
     <div>
-      <ChannelBookingComponent></ChannelBookingComponent>
+      <ChannelBookingComponent />
     </div>
   );
 };
