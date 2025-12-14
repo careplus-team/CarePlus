@@ -731,10 +731,13 @@ const DoctorDashboard = () => {
                           </button>
 
                           <div className="">
-                            <button className="flex w-full items-center justify-center space-x-2 px-4 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700">
-                              <UserCheck className="w-4 h-4" />
-                              <span>Show Patients</span>
-                            </button>
+                            <button
+                               className="flex w-full items-center justify-center space-x-2 px-4 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700"
+                               onClick={() =>
+                               router.push(`/doctor/PatientList-show?channelId=${selected.id}`)
+  }>                           <UserCheck className="w-4 h-4" />
+                        <span>Show Patients</span>
+                        </button>
                           </div>
                         </div>
                       </div>
