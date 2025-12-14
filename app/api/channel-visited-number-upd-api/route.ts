@@ -59,6 +59,14 @@ export async function POST(req: NextRequest) {
         message: error.message,
       });
     }
+
+    if (data == null) {
+      return NextResponse.json({
+        data: null,
+        success: false,
+        message: "Failed to update channel visited numbers",
+      });
+    }
     return NextResponse.json({
       data: data,
       success: true,

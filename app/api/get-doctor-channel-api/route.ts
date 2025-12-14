@@ -8,6 +8,7 @@ export async function POST(req: NextRequest) {
       .from("channel")
       .select("*")
       .eq("doctorEmail", email)
+      .neq("state", "ended")
       .order("created_at", { ascending: false });
     if (doctorChannelData.error) {
       return NextResponse.json({
