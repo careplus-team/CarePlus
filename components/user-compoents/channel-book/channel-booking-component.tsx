@@ -33,7 +33,13 @@ const BookingSchema = z.object({
   patientName: z.string().min(2, {
     message: "Patient name must be at least 2 characters.",
   }),
-  additionalPhoneNumber: z.string().optional(),
+  additionalPhoneNumber: z
+    .string()
+    .regex(
+      /^(?:0\d{9}|\+94\d{9})$/,
+      "Please enter a valid Sri Lankan phone number (e.g., 0712345678 or +94712345678)."
+    )
+    .optional(),
   patientNote: z.string().optional(),
 });
 
