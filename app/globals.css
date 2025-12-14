@@ -66,3 +66,33 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  /* Custom class for mobile-style scrollbar */
+  .scrollbar-mobile {
+    /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent; /* thumb track */
+  }
+
+  /* Chrome, Edge, Safari */
+  .scrollbar-mobile::-webkit-scrollbar {
+    width: 6px; /* Width of vertical scrollbar */
+    height: 6px; /* Height of horizontal scrollbar */
+  }
+
+  .scrollbar-mobile::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-mobile::-webkit-scrollbar-thumb {
+    background-color: #d1d5db; /* gray-300 */
+    border-radius: 20px;
+    border: 3px solid transparent; /* Creates padding around thumb */
+    background-clip: content-box; /* Makes thumb smaller than track */
+  }
+
+  .scrollbar-mobile:hover::-webkit-scrollbar-thumb {
+    background-color: #9ca3af; /* gray-400 on hover */
+  }
+}
