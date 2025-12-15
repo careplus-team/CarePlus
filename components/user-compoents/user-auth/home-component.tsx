@@ -730,35 +730,64 @@ const HomeComponent = () => {
                 </div>
               </div>
               {isUpcommingChannelingPending ? (
-                <div className="p-6 flex items-center justify-center">
-                  <svg
-                    className="animate-spin h-8 w-8 text-gray-600"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
+                <div className="p-6">
+                  <div className="space-y-4">
+                    {Array.from({ length: 3 }).map((_, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-4 bg-slate-50 rounded-xl animate-pulse border border-slate-100"
+                      >
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+                          <div>
+                            <div className="h-4 bg-gray-300 rounded w-32 mb-2"></div>
+                            <div className="h-3 bg-gray-200 rounded w-24 mb-1"></div>
+                            <div className="h-3 bg-gray-200 rounded w-40"></div>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="h-6 w-20 bg-gray-200 rounded-full mb-2"></div>
+                          <div className="h-8 w-24 bg-gray-100 rounded-lg"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : upCommingChannelingData.length == 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                  <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
+                    <svg
+                      className="w-8 h-8 text-slate-400"
+                      fill="none"
                       stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8v8H4z"
-                    ></path>
-                  </svg>
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-slate-900">
+                    No Upcoming Appointments
+                  </h3>
+                  <p className="text-slate-500 mt-1 text-sm max-w-xs">
+                    You have no upcoming channeling appointments scheduled. Book
+                    a new appointment to see it here.
+                  </p>
                 </div>
               ) : (
                 <div className="p-6 max-h-96 overflow-y-scroll scrollbar-mobile">
                   <div className="space-y-4 max-h-64 overflow-y-auto">
                     {upCommingChannelingData.map((appointment, index) => (
                       <div
+                        onClick={() =>
+                          router.push(`/channel-book/${appointment.channelId}`)
+                        }
                         key={index}
-                        className="flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
+                        className="flex cursor-pointer items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
                       >
                         <div className="flex items-center space-x-4">
                           <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold">
@@ -855,36 +884,62 @@ const HomeComponent = () => {
               <div className="p-6 max-h-96 overflow-y-scroll scrollbar-mobile">
                 <div className="grid gap-4">
                   {isAvailableChannelListPending ? (
-                    <div className="flex justify-center items-center ">
-                      {" "}
-                      <svg
-                        className="animate-spin h-8 w-8 text-gray-600"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8v8H4z"
-                        ></path>
-                      </svg>
+                    <div className="p-6">
+                      <div className="space-y-4">
+                        {Array.from({ length: 3 }).map((_, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between p-4 bg-slate-50 rounded-xl animate-pulse border border-slate-100"
+                          >
+                            <div className="flex items-center space-x-4">
+                              <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+                              <div>
+                                <div className="h-4 bg-gray-300 rounded w-32 mb-2"></div>
+                                <div className="h-3 bg-gray-200 rounded w-24 mb-1"></div>
+                                <div className="h-3 bg-gray-200 rounded w-40"></div>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="h-6 w-20 bg-gray-200 rounded-full mb-2"></div>
+                              <div className="h-8 w-24 bg-gray-100 rounded-lg"></div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   ) : availableChannelList.length === 0 ? (
-                    <div>No available channelings at the moment.</div>
+                    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                      <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
+                        <svg
+                          className="w-8 h-8 text-slate-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-medium text-slate-900">
+                        No Available Appointments
+                      </h3>
+                      <p className="text-slate-500 mt-1 text-sm max-w-xs">
+                        There are no appointments currently available for
+                        channeling. Please come back later.
+                      </p>
+                    </div>
                   ) : (
                     availableChannelList.map((channeling, index) => (
                       <div
+                        onClick={() =>
+                          router.push(`/channel-book/${channeling.id}`)
+                        }
                         key={index}
-                        className="group bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl p-4 border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 cursor-pointer"
+                        className="group cursor-pointers bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl p-4 border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 cursor-pointer"
                       >
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center space-x-4">
