@@ -184,8 +184,32 @@ const HomeComponent = () => {
       );
       if (response.data.success) {
         console.log("upcomming channelings", response.data.data);
-        setUpCommingChannelingData(response.data.data || []);
-        response.data.data.forEach(async (channeling: any) => {
+        // Enrich each appointment with channel state and filter out ended channels
+        const enriched = await Promise.all(
+          (response.data.data || []).map(async (channeling: any) => {
+            try {
+              const ch = await axios.post("/api/get-one-channel-deatils-api", {
+                channelId: channeling.channelId,
+              });
+              const channelState = ch.data.success ? ch.data.data.state : null;
+              return { ...channeling, channelState };
+            } catch (e) {
+              console.error(
+                "Error fetching channel details for appointment",
+                e
+              );
+              return { ...channeling, channelState: null };
+            }
+          })
+        );
+
+        const filtered = enriched.filter(
+          (a: any) => a.channelState !== "ended"
+        );
+        setUpCommingChannelingData(filtered || []);
+
+        // fetch doctor data
+        filtered.forEach(async (channeling: any) => {
           const daoctorData = await axios.post("/api/doctor-details-get-api", {
             email: channeling.doctorEmail,
           });
@@ -340,8 +364,12 @@ const HomeComponent = () => {
         );
         if (channelListResponse.data.success) {
           console.log("available channel list", channelListResponse.data.data);
-          setAvailableChannelList(channelListResponse.data.data || []);
-          channelListResponse.data.data.forEach(async (channel: any) => {
+          // Filter out ended channels so they do not appear on the dashboard
+          const availableFiltered = (
+            channelListResponse.data.data || []
+          ).filter((c: any) => c.state !== "ended");
+          setAvailableChannelList(availableFiltered);
+          availableFiltered.forEach(async (channel: any) => {
             try {
               const channelListDoctorsData = await axios.post(
                 "/api/doctor-details-get-api",
@@ -783,9 +811,17 @@ const HomeComponent = () => {
                   <div className="space-y-4 max-h-64 overflow-y-auto">
                     {upCommingChannelingData.map((appointment, index) => (
                       <div
-                        onClick={() =>
-                          router.push(`/channel-book/${appointment.channelId}`)
-                        }
+                        onClick={() => {
+                          if (appointment.channelState === "started") {
+                            router.push(
+                              `/channel-monitor/${appointment.channelId}`
+                            );
+                          } else {
+                            router.push(
+                              `/channel-book/${appointment.channelId}`
+                            );
+                          }
+                        }}
                         key={index}
                         className="flex cursor-pointer items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
                       >
@@ -825,12 +861,14 @@ const HomeComponent = () => {
                         <div>
                           <div
                             className={`px-3 py-1 flex justify-center rounded-full text-xs font-medium ${
-                              appointment.state === false
+                              appointment.channelState === "started"
                                 ? "bg-green-100 text-green-700"
                                 : "bg-yellow-100 text-yellow-700"
                             }`}
                           >
-                            {appointment.state ? "Ongoing" : "Upcoming"}
+                            {appointment.channelState === "started"
+                              ? "Ongoing"
+                              : "Upcoming"}
                           </div>
                           <div className="mt-3 flex items-center justify-center gap-2 px-4 py-2 bg-white rounded-lg border border-slate-200 shadow-sm transition-all hover:shadow-md hover:border-indigo-200">
                             <Users className="w-4 h-4 text-indigo-500" />

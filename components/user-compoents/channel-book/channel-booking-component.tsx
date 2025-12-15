@@ -631,11 +631,15 @@ const BookingChannelComponent = ({ id }: { id: number }) => {
         if (!channelInfo.data.success) throw new Error("Channel not found");
 
         const cData: ChannelData = channelInfo.data.data;
-        if (cData.state === "started" || cData.state === "ended") {
-          toast.error("Cannot book a channel that has already started/ended");
+        // If session already ended, deny access to everyone
+        if (cData.state === "ended") {
+          toast.error(
+            "This channel session has ended and is no longer accessible"
+          );
           router.push("/home");
           return;
         }
+
         setChannelData(cData);
 
         const doctorInfo = await axios.post("/api/doctor-details-get-api/", {
@@ -643,6 +647,8 @@ const BookingChannelComponent = ({ id }: { id: number }) => {
         });
         if (doctorInfo.data.success) setDoctorData(doctorInfo.data.data);
 
+        // If session has started, only allow users who already have a booking to stay on the page.
+        // Fetch the user's booking and redirect to the booking page if none exists.
         if (userEmail) {
           const bookingCheck = await axios.post(
             "/api/get-patient-channeling-info/",
@@ -651,8 +657,26 @@ const BookingChannelComponent = ({ id }: { id: number }) => {
               patientEmail: userEmail,
             }
           );
+
           if (bookingCheck.data.success && bookingCheck.data.data) {
             setUserBooking(bookingCheck.data.data);
+          }
+
+          if (
+            cData.state === "started" &&
+            !(bookingCheck.data.success && bookingCheck.data.data)
+          ) {
+            toast.error(
+              "Only booked users can access this page after the session has started"
+            );
+            router.push(`/channel-book/${id}`);
+            return;
+          }
+        } else {
+          // If the user isn't identified yet and session started, redirect to login
+          if (cData.state === "started") {
+            router.push("/login");
+            return;
           }
         }
       } catch (error) {

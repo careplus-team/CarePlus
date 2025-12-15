@@ -100,7 +100,7 @@ const LoginComponent = () => {
     <div className="flex flex-col md:flex-row md:justify-center md:items-center h-screen xl:bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className=" absolute top-4 left-4 ">
         <p className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500  to-green-500 font-bold  text-2xl">
-          <a href="/">CarePlus</a>
+          <a href="/home">CarePlus</a>
         </p>
       </div>
       <div className="flex flex-col xl:flex-row md:justify-center md:items-center w-full max-w-4xl  bg-white xl:p-10 rounded-xl xl:gap-16">
