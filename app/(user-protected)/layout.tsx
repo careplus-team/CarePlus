@@ -29,20 +29,9 @@ export default function UserProtectedLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.className} antialiased`}>
-        <UserSecurity>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-          </ThemeProvider>
-          <Toaster position="top-center" />
-        </UserSecurity>
-      </body>
-    </html>
+    <UserSecurity>
+      {children}
+      <Toaster position="top-center" />
+    </UserSecurity>
   );
 }

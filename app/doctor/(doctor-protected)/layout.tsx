@@ -28,20 +28,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.className} antialiased`}>
-        <DoctorSecurity>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-          </ThemeProvider>
-          <Toaster position="top-center" />
-        </DoctorSecurity>
-      </body>
-    </html>
+    <DoctorSecurity>
+      {children}
+      <Toaster position="top-center" />
+    </DoctorSecurity>
   );
 }
