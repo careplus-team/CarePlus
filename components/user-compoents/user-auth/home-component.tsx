@@ -935,11 +935,16 @@ const HomeComponent = () => {
                   ) : (
                     availableChannelList.map((channeling, index) => (
                       <div
-                        onClick={() =>
-                          router.push(`/channel-book/${channeling.id}`)
-                        }
+                        onClick={() => {
+                          if (channeling.remainingSlots <= 0) return;
+                          router.push(`/channel-book/${channeling.id}`);
+                        }}
                         key={index}
-                        className="group cursor-pointers bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl p-4 border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 cursor-pointer"
+                        className={` ${
+                          channeling.remainingSlots <= 0
+                            ? "cursor-not-allowed opacity-50"
+                            : "cursor-pointer"
+                        } group bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl p-4 border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 `}
                       >
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center space-x-4">
@@ -1006,12 +1011,18 @@ const HomeComponent = () => {
                           </div>
 
                           <div className="flex items-center space-x-2">
-                            <Button
-                              size="sm"
-                              className="bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white text-xs px-4 py-2 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200"
-                            >
-                              Book Now
-                            </Button>
+                            {channeling.remainingSlots <= 0 ? (
+                              <div className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+                                Fully Booked
+                              </div>
+                            ) : (
+                              <Button
+                                size="sm"
+                                className="bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white text-xs px-4 py-2 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+                              >
+                                Book Now
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>

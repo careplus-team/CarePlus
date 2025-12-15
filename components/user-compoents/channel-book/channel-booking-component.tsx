@@ -45,6 +45,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import LoadingUI from "@/lib/UI-helpers/loading-ui";
 
 // --- Types & Interfaces ---
 interface ChannelData {
@@ -771,10 +772,7 @@ const BookingChannelComponent = ({ id }: { id: number }) => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
-          <p className="text-gray-500 font-medium">Loading details...</p>
-        </div>
+        <LoadingUI />
       </div>
     );
   }
