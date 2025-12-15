@@ -494,7 +494,19 @@ const BookingFormBlock = ({
             <Zap className="w-4 h-4 mr-2 text-indigo-500" />
             <span className="font-medium text-gray-700">Booking Slot:</span>
             <span className="ml-2 font-bold text-indigo-600">
-              #{totalBooked + 1}
+              {percentage >= 100 ? "Fully Booked" : ` #${totalBooked + 1}`}
+            </span>
+          </div>
+          <div className="flex items-center text-sm">
+            <User className="w-4 h-4 mr-2 text-indigo-500" />
+            <span className="font-medium text-gray-700">
+              Estimated Waiting Times:
+            </span>
+            <span className="ml-2  text-blue-500 font-bold">
+              {formatWaitingTime(
+                channelData.estimateWaitingTime,
+                totalBooked + 1
+              )}
             </span>
           </div>
           <div className="flex items-center text-sm">
@@ -518,22 +530,42 @@ const BookingFormBlock = ({
           />
         </div>
 
-        <Button
-          onClick={() => createBooking(patientNote)}
-          className="w-full py-6 text-lg bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-500/30 transition-all hover:scale-[1.01]"
-          disabled={isBooking || percentage >= 100}
-        >
-          {isBooking ? (
-            <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Processing...
-            </>
-          ) : percentage >= 100 ? (
-            "Fully Booked"
-          ) : (
-            `Confirm Booking (Slot #${totalBooked + 1})`
-          )}
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              className="w-full py-6 text-lg bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-500/30 transition-all hover:scale-[1.01]"
+              disabled={isBooking || percentage >= 100}
+            >
+              {isBooking ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : percentage >= 100 ? (
+                "Fully Booked"
+              ) : (
+                `Confirm Booking (Slot #${totalBooked + 1})`
+              )}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm Your Booking</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to book this appointment? This action
+                cannot be undone once confirmed. You will be assigned slot #
+                {totalBooked + 1} and will need to pay the consultation fee.
+                Please ensure all details are correct before proceeding.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => createBooking(patientNote)}>
+                Confirm Booking
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       <p className="text-center text-xs text-gray-400 mt-6">
