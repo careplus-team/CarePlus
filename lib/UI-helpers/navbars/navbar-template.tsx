@@ -138,7 +138,7 @@ export function DashboardNavbar({
                 alt={dbUserInfo?.name || userInfo?.user?.email || "User Avatar"}
                 width={40}
                 height={40}
-                className="rounded-full object-cover"
+                className="rounded-full object-cover aspect-square"
               />
               <Button
                 onClick={() => {
@@ -208,7 +208,7 @@ export function DashboardNavbar({
                   }
                   width={48}
                   height={48}
-                  className="rounded-full object-cover"
+                  className="rounded-full object-cover aspect-square"
                 />
                 <div>
                   <p className="font-medium text-gray-900 truncate">

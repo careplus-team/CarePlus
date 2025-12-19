@@ -462,7 +462,7 @@ const HomeComponent = () => {
                   alt="Profile"
                   width={70}
                   height={70}
-                  className="rounded-full object-cover"
+                  className="rounded-full object-cover aspect-square"
                 />
               </div>
             </div>

@@ -1,7 +1,12 @@
 "use client";
 import React, { useTransition } from "react";
 import { DashboardNavbar } from "./navbar-template";
-import { Activity, ClipboardMinus, History } from "lucide-react";
+import {
+  Activity,
+  ClipboardMinus,
+  History,
+  UserRoundSearch,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -21,6 +26,10 @@ const UserNavbar = () => {
       <Button variant="ghost">
         <History />
         Chaneling History
+      </Button>
+      <Button onClick={() => router.push("/profile")} variant="ghost">
+        <UserRoundSearch />
+        My Profile
       </Button>
     </DashboardNavbar>
   );
