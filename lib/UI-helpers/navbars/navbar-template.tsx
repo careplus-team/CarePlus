@@ -106,7 +106,7 @@ export function DashboardNavbar({
             </button>
 
             {/* Brand Section */}
-            <Link href="/home" className="flex items-center gap-2">
+            <Link href={`${brandName == "CarePlus Admin" ? "/admin" : "/home"}`} className="flex items-center gap-2">
               {brandIcon && <span className="text-primary">{brandIcon}</span>}
               <div className="flex flex-col leading-none">
                 <span className="text-lg font-bold text-gray-900">
