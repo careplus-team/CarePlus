@@ -32,6 +32,7 @@ const DoctorDashboard = () => {
   const [opdSessionData, setOpdSessionData] = useState<any>([]);
   const [initialLoad, setInitialLoad] = useState<boolean>(true);
   const [doctorInfo, setDoctorInfo] = useState<any>(null);
+  const [doctorEmail, setDoctorEmail] = useState<string>("");
 
   const getStatusColor = (status: any) => {
     switch (status) {
@@ -71,6 +72,7 @@ const DoctorDashboard = () => {
         });
         console.log("signed in doctor data", doctorInfo);
         setDoctorInfo(doctorInfo.data.data);
+        setDoctorEmail(userData.data.user?.email || "");
 
         const channelingData = await axios.post("/api/get-doctor-channel-api", {
           email: userData.data.user?.email,
@@ -107,6 +109,60 @@ const DoctorDashboard = () => {
   useEffect(() => {
     getSignedInUserData();
   }, []);
+
+  // Realtime subscription for channel updates
+  useEffect(() => {
+    if (!doctorEmail) return;
+
+    const channelSubscription = client
+      .channel(`doctor-channels-${doctorEmail}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "channel",
+          filter: `doctorEmail=eq.${doctorEmail}`,
+        },
+        (payload) => {
+          console.log("Realtime channel update:", payload);
+          // Refetch channel data
+          getSignedInUserData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      client.removeChannel(channelSubscription);
+    };
+  }, [doctorEmail]);
+
+  // Realtime subscription for OPD session updates
+  useEffect(() => {
+    if (!doctorEmail) return;
+
+    const opdSubscription = client
+      .channel(`doctor-opd-${doctorEmail}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "opdsession",
+          filter: `doctorEmail=eq.${doctorEmail}`,
+        },
+        (payload) => {
+          console.log("Realtime OPD session update:", payload);
+          // Refetch OPD session data
+          getSignedInUserData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      client.removeChannel(opdSubscription);
+    };
+  }, [doctorEmail]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
