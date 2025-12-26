@@ -207,6 +207,7 @@ export default function OPDUpdateQueue() {
           console.log("Realtime update received:", payload.new);
           setSessionDataPool(payload.new);
           setNumberOfSlots(payload.new.numberOfPatientsSlots);
+          setSessionStarted(payload.new.started || false);
         }
       )
       .subscribe();
@@ -232,39 +233,6 @@ export default function OPDUpdateQueue() {
     onConfirm: () => {},
   });
 
-  const triggerStartSession = () => {
-    setConfirmation({
-      isOpen: true,
-      title: "Start OPD Session?",
-      message:
-        "This will make the session active and visible to patients. Are you sure you want to start?",
-      type: "start",
-      onConfirm: handleStartSession,
-    });
-  };
-
-  const triggerEndSession = () => {
-    setConfirmation({
-      isOpen: true,
-      title: "End OPD Session?",
-      message:
-        "This will close the current session. This action cannot be undone. Are you sure?",
-      type: "end",
-      onConfirm: handleEndSession,
-    });
-  };
-
-  const triggerResetQueue = () => {
-    setConfirmation({
-      isOpen: true,
-      title: "Reset OPD Queue?",
-      message:
-        "This will reset the patient count to the original capacity. Current progress will be lost. Are you sure?",
-      type: "reset",
-      onConfirm: handleResetQueue,
-    });
-  };
-
   //handle start session
   const handleStartSession = async () => {
     if (!sessionDataPool || !sessionDataPool.doctorEmail) return;
@@ -276,15 +244,20 @@ export default function OPDUpdateQueue() {
       console.log("Start session response:", response.data);
       if (response.data.success) {
         toast.success("OPD Session started successfully");
+        setSessionStarted(true);
+        setStartingSession(false);
+        // Update local state immediately for better UX
+        setSessionDataPool((prev: any) => ({ ...prev, started: true }));
       } else {
         toast.error("Error starting OPD Session: " + response.data.message);
+        setStartingSession(false);
         return;
       }
     } catch (error) {
       toast.error("Error starting OPD Session.");
+      setStartingSession(false);
       return;
     }
-    setSessionStarted(false);
   };
   //handle end session
   const handleEndSession = async () => {
@@ -325,6 +298,39 @@ export default function OPDUpdateQueue() {
     }
   };
 
+  const triggerStartSession = () => {
+    setConfirmation({
+      isOpen: true,
+      title: "Start OPD Session?",
+      message:
+        "This will make the session active and visible to patients. Are you sure you want to start?",
+      type: "start",
+      onConfirm: handleStartSession,
+    });
+  };
+
+  const triggerEndSession = () => {
+    setConfirmation({
+      isOpen: true,
+      title: "End OPD Session?",
+      message:
+        "This will close the current session. This action cannot be undone. Are you sure?",
+      type: "end",
+      onConfirm: handleEndSession,
+    });
+  };
+
+  const triggerResetQueue = () => {
+    setConfirmation({
+      isOpen: true,
+      title: "Reset OPD Queue?",
+      message:
+        "This will reset the patient count to the original capacity. Current progress will be lost. Are you sure?",
+      type: "reset",
+      onConfirm: handleResetQueue,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-indigo-50/30 font-sans text-slate-800 relative overflow-hidden flex flex-col items-center justify-center">
       {/* CarePlus Title - Fixed Top Left */}
@@ -349,7 +355,10 @@ export default function OPDUpdateQueue() {
             <div className="flex items-center gap-3">
               <button
                 onClick={triggerEndSession}
-                className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors group"
+                disabled={!sessionStarted}
+                className={`flex items-center gap-2 transition-colors group ${
+                  !sessionStarted ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
                 <div className="bg-white p-2 rounded-full shadow-sm border border-slate-200 group-hover:border-red-400 group-hover:text-red-600 transition-all">
                   <Trash2 className="w-5 h-5 text-red-300" />
@@ -564,9 +573,12 @@ export default function OPDUpdateQueue() {
                       </button>
                     </div>
                     <Button
+                      disabled={!sessionStarted}
                       className={`${
                         Number(numberOfSlots) === 0 ? "flex" : "hidden"
-                      } bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-full shadow-lg shadow-green-200 transition-all`}
+                      } bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-full shadow-lg shadow-green-200 transition-all ${
+                        !sessionStarted ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
                       onClick={triggerEndSession}
                     >
                       <CircleCheckBig />
