@@ -32,6 +32,7 @@ const HomeComponent = () => {
   const [availableChannelList, setAvailableChannelList] = useState<any[]>([]);
   const [availableChannelListDoctorData, setAvailableChannelListDoctorData] =
     useState<any[]>([]);
+  const [opdDoctorData, setOpdDoctorData] = useState<any>(null);
 
   // All useTransition hooks
   const [isPending, startTransition] = useTransition();
@@ -45,6 +46,17 @@ const HomeComponent = () => {
     useTransition();
   const [isAvailableChannelListPending, startChannelListTransition] =
     useTransition();
+
+  // Helper to show initials when profile picture is not available
+  const getInitials = (name?: string) => {
+    if (!name) return "DS";
+    return name
+      .split(" ")
+      .map((p) => p[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+  };
 
   useEffect(() => {
     // 1. Fetch initial notices
@@ -169,6 +181,31 @@ const HomeComponent = () => {
       supabaseClient.removeChannel(channel);
     };
   }, []);
+
+  // Fetch doctor details for the active OPD session
+  useEffect(() => {
+    if (!opdSessionData?.doctorEmail) {
+      setOpdDoctorData(null);
+      return;
+    }
+
+    startTransitionOpdSession(async () => {
+      try {
+        const doctorResp = await axios.post("/api/doctor-details-get-api", {
+          email: opdSessionData.doctorEmail,
+        });
+
+        if (doctorResp.data?.success) {
+          setOpdDoctorData(doctorResp.data.data);
+        } else {
+          setOpdDoctorData(null);
+        }
+      } catch (e) {
+        console.error("Error fetching OPD doctor details", e);
+        setOpdDoctorData(null);
+      }
+    });
+  }, [opdSessionData]);
 
   // Fetch upcomming channelings for user
   const fetchUpcommingChannelings = () => {
@@ -531,22 +568,50 @@ const HomeComponent = () => {
                     {/* Doctor Info */}
                     <div className="bg-slate-50 rounded-xl p-4">
                       <div className="flex items-center space-x-4 mb-4">
-                        <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                          DS
-                        </div>
+                        {opdDoctorData?.profilePicture ? (
+                          <Image
+                            src={opdDoctorData.profilePicture}
+                            alt={opdDoctorData?.name || "Doctor"}
+                            width={64}
+                            height={64}
+                            className="rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                            {getInitials(
+                              opdDoctorData?.name || opdSessionData?.doctorName
+                            )}
+                          </div>
+                        )}
                         <div>
                           <h4 className="font-bold text-gray-900">
-                            {opdSessionData?.doctorName || "Loading..."}
+                            {opdDoctorData?.name ||
+                              opdSessionData?.doctorName ||
+                              "Loading..."}
                           </h4>
                           <p className="text-blue-600 font-medium">
-                            Cardiology
+                            {opdDoctorData?.specialization || "Loading..."}
                           </p>
                           <p className="text-sm text-gray-600">
-                            MBBS • Reg: 123456
+                            {opdDoctorData?.medicalregno
+                              ? `Reg: ${opdDoctorData.medicalregno}`
+                              : "Reg: N/A"}
                           </p>
                           <p>Notes</p>
                           <p>{opdSessionData?.notes || "Loading..."}</p>
                         </div>
+                      </div>
+                      <div
+                        className={`${
+                          opdSessionData?.started
+                            ? "border-green-500 text-green-700 bg-green-600/10"
+                            : "border-red-500 text-red-700 bg-red-600/10 "
+                        } rounded-full border-2 px-4 py-1 inline-block text-sm font-medium `}
+                      >
+                        Current Status{" "}
+                        {opdSessionData?.started
+                          ? ": Started"
+                          : ": Not Yet Started"}
                       </div>
                     </div>
 
@@ -675,8 +740,10 @@ const HomeComponent = () => {
                           d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
                         />
                       </svg>
-                      Reserve Position{" "}
-                      {(opdSessionData?.lastIssuedToken || 0) + 1}
+                      {isAlreadyBooked
+                        ? "Already Booked"
+                        : "Reserve Position" +
+                          ((opdSessionData?.lastIssuedToken || 0) + 1)}
                     </Button>
                   </div>
                 </div>
