@@ -359,7 +359,7 @@ const LabReportUploadComp = () => {
                       "pdf",
                     ],
                     multiple: false,
-                    folder: "user_profile_pics",
+                    folder: "user_reports",
                     maxFiles: 1,
                     resourceType: "auto",
                     tags: ["profile", "user"],
