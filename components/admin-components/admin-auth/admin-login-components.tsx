@@ -34,6 +34,7 @@ import {
   UserCheck,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import axios from "axios";
 import { useState } from "react";
 import Link from "next/link";
 
@@ -69,6 +70,25 @@ const AdminLoginComponent = () => {
   // Handle form submission and Supabase authentication
   const handleAdminLogin = (values: z.infer<typeof LoginSchema>) => {
     startTransition(async () => {
+      try {
+        // Verify user's role via server API before attempting sign-in
+        const resp = await axios.post("/api/check-admin", { email: values.email });
+        if (!resp?.data?.isAdmin) {
+          toast.error("Unauthorized", {
+            description:
+              "You are not authorized to access the admin portal. Redirecting to user login...",
+          });
+          router.push("/login");
+          return;
+        }
+      } catch (err) {
+        console.error("Role check failed", err);
+        toast.error("Authorization check failed", {
+          description: "Unable to verify admin role. Please try again later.",
+        });
+        return;
+      }
+
       const { error } = await client.auth.signInWithPassword({
         email: values.email,
         password: values.password,
@@ -86,7 +106,7 @@ const AdminLoginComponent = () => {
         description: "Redirecting to the admin dashboard...",
       });
 
-      router.push("/admin/dashboard");
+      router.push("/admin");
     });
   };
 
