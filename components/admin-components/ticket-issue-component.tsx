@@ -144,11 +144,7 @@ export default function IssueTicketComponent() {
 
   return (
     <div className="flex items-center justify-center min-h-[85vh] p-4 bg-gray-50/50 dark:bg-background">
-      <div className=" absolute top-4 left-4 ">
-        <p className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500  to-green-500 font-bold  text-2xl">
-          <a href="/">CarePlus</a>
-        </p>
-      </div>
+   
       <Card className="w-full max-w-md shadow-xl border-2 border-gray-200 dark:ring-gray-800">
         {/* Header Section */}
         <CardHeader className="pb-2 text-center border-b bg-muted/10">

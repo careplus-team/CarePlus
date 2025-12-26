@@ -123,12 +123,7 @@ const MyLabReportsCompo = () => {
 
   return (
     <div className="min-h-screen bg-gray-50/50 p-6 md:p-10">
-      <div className=" absolute top-4 left-4 ">
-        <p className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500  to-green-500 font-bold  text-2xl">
-          <a href="/home">CarePlus</a>
-        </p>
-      </div>
-      <div className="max-w-7xl mx-auto mt-14 md:mt-10">
+      <div className="max-w-7xl mx-auto ">
         {/* Header Section */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 tracking-tight">

@@ -79,7 +79,7 @@ export default function QueueCreation() {
           toast.error(
             "An existing OPD session is active. Please end it before creating a new one."
           );
-          router.push("/admin/dashboard");
+          router.push("/admin");
           return;
         }
       } catch (e) {
@@ -119,7 +119,7 @@ export default function QueueCreation() {
         toast.error("Failed to create OPD Session. Please try again.");
         return;
       }
-      router.push("/admin/admin-dashboard");
+      router.push("/admin");
     });
   };
 
@@ -146,10 +146,10 @@ export default function QueueCreation() {
   };
 
   return (
-    <div className="min-h-screen bg-indigo-50/30 font-sans text-slate-800 relative overflow-y-auto flex flex-col items-center justify-start md:justify-center py-12 md:py-0">
+    <div className="min-h-screen bg-indigo-50/30 font-sans text-slate-800 relative overflow-y-auto flex flex-col items-center justify-start md:justify-top md:pt-5 md:w-full rounded-xl  md:py-0">
       {isPendingForCreation && sessionCreationInprogresswindow()}
       {isLoading || isPending ? (
-        <div className="flex flex-col items-center justify-center gap-6 animate-in fade-in duration-700 h-screen">
+        <div className="flex flex-col w-full items-center justify-center gap-6 animate-in fade-in duration-700 h-screen">
           <div className="relative flex items-center justify-center">
             {/* Background Glow */}
             <div className="absolute w-24 h-24 bg-emerald-400/20 rounded-full blur-2xl animate-pulse"></div>
@@ -174,13 +174,8 @@ export default function QueueCreation() {
           </div>
         </div>
       ) : (
-        <div className="w-full flex flex-col items-center">
-          {/* CarePlus Title in Top Left */}
-          <div className=" absolute top-4 left-4 ">
-            <p className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500  to-green-500 font-bold  text-2xl">
-              <a href="/">CarePlus</a>
-            </p>
-          </div>
+        <div className="w-full flex flex-col items-center rounded-xl">
+    
 
           {/* Background Decor */}
           <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
@@ -442,8 +437,8 @@ export default function QueueCreation() {
                   </div>
                 </div>
 
-                {/* Bottom Strip */}
-                <div className="h-1.5 w-full bg-gradient-to-r from-emerald-500 via-teal-500 to-blue-500"></div>
+               
+               
               </div>
             </div>
           </div>

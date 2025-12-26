@@ -440,7 +440,7 @@ const HomeComponent = () => {
 
           <div className="relative flex flex-col md:flex-row items-center justify-between">
             <div className="mb-6 md:mb-0">
-              <h2 className="text-3xl md:text-4xl font-bold mb-2">
+              <h2 className="text-3xl text-center md:text-left md:text-4xl font-bold mb-2">
                 Welcome back,{" "}
                 {isPending ? (
                   <span className="inline-block animate-pulse bg-gray-300 h-8 w-24 rounded mx-2"></span>
@@ -449,7 +449,7 @@ const HomeComponent = () => {
                 )}
                 ! 👋
               </h2>
-              <p className="text-blue-100 text-lg">
+              <p className="text-blue-100 text-lg text-center md:text-left">
                 Your health journey continues. Here's your personalized
                 dashboard.
               </p>
@@ -462,7 +462,7 @@ const HomeComponent = () => {
                   alt="Profile"
                   width={70}
                   height={70}
-                  className="rounded-full object-cover"
+                  className="rounded-full object-cover aspect-square"
                 />
               </div>
             </div>
@@ -709,6 +709,7 @@ const HomeComponent = () => {
                 </Button>
 
                 <Button
+                  onClick={() => router.push("/my-lab-reports")}
                   variant="outline"
                   className="w-full border-2 border-blue-200 text-blue-600 hover:bg-blue-50 font-semibold py-4 rounded-xl hover:border-blue-300"
                 >
@@ -1097,6 +1098,7 @@ const HomeComponent = () => {
                 </Button>
 
                 <Button
+                  onClick={() => router.push("/my-lab-reports")}
                   variant="outline"
                   className="w-full h-[30%] border-2 border-blue-200 text-blue-600 hover:bg-blue-50 font-semibold py-4 rounded-xl hover:border-blue-300"
                 >

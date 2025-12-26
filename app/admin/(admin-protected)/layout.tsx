@@ -6,6 +6,7 @@ import "../../globals.css";
 import { Toaster } from "sonner";
 
 import AdminSecurity from "@/lib/security-walls/admin-security";
+import AdminNavbar from "@/components/admin-components/admin-navbar";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -38,7 +39,16 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
+            <div className="flex flex-col min-h-screen">
+               {/* Admin Navbar */}
+               <div className="sticky top-0 z-50">
+                  <AdminNavbar />
+               </div>
+               {/* Main Content */}
+               <main className="flex-1">
+                 {children}
+               </main>
+            </div>
           </ThemeProvider>
           <Toaster position="top-center" />
         </AdminSecurity>

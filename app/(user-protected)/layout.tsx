@@ -6,6 +6,11 @@ import "../globals.css";
 import { Toaster } from "sonner";
 
 import UserSecurity from "@/lib/security-walls/user-security";
+import { DashboardNavbar } from "@/lib/UI-helpers/navbars/navbar-template";
+import { Activity } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
+import UserNavbar from "@/lib/UI-helpers/navbars/user-navbar";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -28,8 +33,10 @@ export default function UserProtectedLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const client = createClient();
   return (
     <UserSecurity>
+      <UserNavbar />
       {children}
       <Toaster position="top-center" />
     </UserSecurity>
