@@ -6,36 +6,60 @@ export async function POST(request: Request) {
     const { channelId } = await request.json();
 
     if (!channelId) {
-      return NextResponse.json({
-        data: null,
-        success: false,
-        message: "channelId is required",
-      });
+      return NextResponse.json(
+        {
+          success: false,
+          data: null,
+          message: "channelId is required",
+        },
+        { status: 400 }
+      );
     }
 
-    const PatientListData = await supabaseServer
-      .from("patient_channel")
-      .select("*")
-      .neq("state", "ended")
-      .eq("id", channelId);
+    const { data, error } = await supabaseServer
+      .from("patient_channeling")
+      .select(`
+        id,
+        patientEmail,
+        patientNumber,
+        patientNote,
+        channeledDate,
+        channeledTime,
+        state,
+        channel:channelId (
+          id,
+          name,
+          roomNumber,
+          currentNumber
+        )
+      `)
+      .eq("channelId", channelId)
+      .order("patientNumber", { ascending: true });
 
-    if (PatientListData.error) {
-      return NextResponse.json({
-        data: null,
-        success: false,
-        message: PatientListData.error.message,
-      });
+    if (error) {
+      return NextResponse.json(
+        {
+          success: false,
+          data: null,
+          message: error.message,
+        },
+        { status: 500 }
+      );
     }
+
     return NextResponse.json({
-      data: PatientListData.data,
       success: true,
+      data,
       message: "Patient list fetched successfully",
     });
-  } catch (error) {
-    return NextResponse.json({
-      data: null,
-      success: false,
-      message: "An error occurred while fetching the channel list",
-    });
+  } catch (err) {
+    return NextResponse.json(
+      {
+        success: false,
+        data: null,
+        message: "Internal server error",
+      },
+      { status: 500 }
+    );
   }
 }
