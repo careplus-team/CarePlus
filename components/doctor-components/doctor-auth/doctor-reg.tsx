@@ -100,7 +100,7 @@ function DoctorRegistrationComponent() {
         email: data.email,
         password: data.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/confirm?next=/home`,
+          emailRedirectTo: `${window.location.origin}/confirm?next=/doctor/doctor-dashboard`,
         },
       });
       console.log("User registered:", userData);
@@ -111,7 +111,7 @@ function DoctorRegistrationComponent() {
           description: "You are already registered . Please login.",
           action: {
             label: "Login",
-            onClick: () => router.push("/login"),
+            onClick: () => router.push("/doctor/doctor-login"),
           },
         });
         return;
@@ -201,7 +201,7 @@ function DoctorRegistrationComponent() {
                   className="bg-transparent hover:bg-transparent focus:ring-0 w-28 h-28 md:w-32 md:h-32 xl:w-36 xl:h-36 rounded-full"
                 >
                   <Image
-                    className="min-w-32"
+                    className="min-w-32  object-cover aspect-square"
                     src={profilePic}
                     alt="Placeholder Icon"
                     objectFit="contain"

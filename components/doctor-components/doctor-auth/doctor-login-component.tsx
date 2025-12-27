@@ -142,54 +142,12 @@ const DoctorLoginComponent = () => {
               <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
                 CarePlus
               </h1>
+              <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+                Doctor Portal
+              </h1>
               <p className="text-xl text-blue-100 font-medium">
                 Healthcare Excellence at Your Fingertips
               </p>
-            </div>
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 gap-6 w-full max-w-md mb-12">
-              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 text-center border border-white/20">
-                <Users className="w-8 h-8 mx-auto mb-3 text-blue-200" />
-                <div className="text-2xl font-bold">500+</div>
-                <div className="text-sm text-blue-200">Active Doctors</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 text-center border border-white/20">
-                <Award className="w-8 h-8 mx-auto mb-3 text-emerald-200" />
-                <div className="text-2xl font-bold">98%</div>
-                <div className="text-sm text-emerald-200">Satisfaction</div>
-              </div>
-            </div>
-
-            {/* Features */}
-            <div className="space-y-4 w-full max-w-md">
-              <div className="flex items-center space-x-4 text-blue-100">
-                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5" />
-                </div>
-                <span className="font-medium">24/7 Patient Care Access</span>
-              </div>
-              <div className="flex items-center space-x-4 text-blue-100">
-                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5" />
-                </div>
-                <span className="font-medium">Advanced Medical Tools</span>
-              </div>
-              <div className="flex items-center space-x-4 text-blue-100">
-                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5" />
-                </div>
-                <span className="font-medium">Secure & HIPAA Compliant</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Decorative Elements */}
-          <div className="absolute bottom-8 left-8 right-8">
-            <div className="flex justify-center space-x-2">
-              <div className="w-2 h-2 bg-white/50 rounded-full"></div>
-              <div className="w-2 h-2 bg-white rounded-full"></div>
-              <div className="w-2 h-2 bg-white/50 rounded-full"></div>
             </div>
           </div>
         </div>
@@ -331,13 +289,6 @@ const DoctorLoginComponent = () => {
                   Register as a Doctor →
                 </button>
               </div>
-            </div>
-
-            {/* Footer */}
-            <div className="mt-8 text-center">
-              <p className="text-sm text-gray-500">
-                Secure healthcare platform • HIPAA Compliant
-              </p>
             </div>
           </div>
         </div>
