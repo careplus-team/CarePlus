@@ -305,7 +305,16 @@ const CreateChannelComponent = () => {
                                 field.value ? new Date(field.value) : undefined
                               }
                               onSelect={(selectedDate) => {
-                                field.onChange(selectedDate?.toISOString());
+                                if (selectedDate) {
+                                  const offsetDate = new Date(
+                                    Date.UTC(
+                                      selectedDate.getFullYear(),
+                                      selectedDate.getMonth(),
+                                      selectedDate.getDate()
+                                    )
+                                  );
+                                  field.onChange(offsetDate.toISOString());
+                                }
                                 setOpen(false);
                               }}
                               className="rounded-md border shadow"
