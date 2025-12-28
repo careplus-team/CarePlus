@@ -229,7 +229,14 @@ const HomeComponent = () => {
                 channelId: channeling.channelId,
               });
               const channelState = ch.data.success ? ch.data.data.state : null;
-              return { ...channeling, channelState };
+              const channelName = ch.data.success ? ch.data.data.name : null;
+              const channelFee = ch.data.success ? ch.data.data.fee : 0;
+              return {
+                ...channeling,
+                channelState,
+                name: channelName,
+                fee: channelFee,
+              };
             } catch (e) {
               console.error(
                 "Error fetching channel details for appointment",
@@ -281,8 +288,23 @@ const HomeComponent = () => {
         }
       )
       .subscribe();
+
+    // Add realtime subscription to channel table for status updates
+    const channelStatusSub = supabaseClient
+      .channel("realtime:channel_status")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "channel" },
+        (payload) => {
+          console.log("Realtime channel status update:", payload);
+          fetchUpcommingChannelings();
+        }
+      )
+      .subscribe();
+
     return () => {
       supabaseClient.removeChannel(channel);
+      supabaseClient.removeChannel(channelStatusSub);
     };
   }, [userInfo]);
   const getUserInfoFromDb = (email: any) => {
@@ -880,7 +902,10 @@ const HomeComponent = () => {
                     {upCommingChannelingData.map((appointment, index) => (
                       <div
                         onClick={() => {
-                          if (appointment.channelState === "started") {
+                          if (
+                            appointment.channelState === "started" ||
+                            appointment.channelState === "active"
+                          ) {
                             router.push(
                               `/channel-monitor/${appointment.channelId}`
                             );
@@ -909,6 +934,11 @@ const HomeComponent = () => {
                           </div>
                           <div>
                             <h4 className="font-semibold text-gray-900">
+                           
+                              {appointment.name|| "Loading..."}
+                            </h4>
+
+                            <h4 className="font-semibold text-gray-900">
                               Doctor :{" "}
                               {upDoctorData.find(
                                 (doc) => doc.email === appointment.doctorEmail
@@ -929,12 +959,14 @@ const HomeComponent = () => {
                         <div>
                           <div
                             className={`px-3 py-1 flex justify-center rounded-full text-xs font-medium ${
-                              appointment.channelState === "started"
+                              appointment.channelState === "started" ||
+                              appointment.channelState === "active"
                                 ? "bg-green-100 text-green-700"
                                 : "bg-yellow-100 text-yellow-700"
                             }`}
                           >
-                            {appointment.channelState === "started"
+                            {appointment.channelState === "started" ||
+                            appointment.channelState === "active"
                               ? "Ongoing"
                               : "Upcoming"}
                           </div>
@@ -1069,11 +1101,15 @@ const HomeComponent = () => {
                               />
                             </div>
                             <div>
-                              <h4 className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors">
+                                <h4 className="font-bold mb-2 text-gray-900 group-hover:text-blue-700 transition-colors">
+                                {channeling.name ? channeling.name : ""} LKR
+                              </h4>
+
+                              <p className=" text-gray-900 group-hover:text-blue-700 transition-colors">
                                 {availableChannelListDoctorData.find(
                                   (doc) => doc.email === channeling.doctorEmail
                                 )?.name || "Loading..."}
-                              </h4>
+                              </p>
                               <p className="text-sm text-blue-600 font-medium">
                                 {availableChannelListDoctorData.find(
                                   (doc) => doc.email === channeling.doctorEmail

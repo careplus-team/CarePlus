@@ -107,6 +107,7 @@ model channel {
   description         String?
   remainingSlots      Int?
   currentNumber       Int?           @default(0)
+  fee           Int?           @default(0)
   appointments        appointments[]
 
   @@schema("public")
