@@ -14,4 +14,5 @@ export const createChannelSchema = z.object({
   estimateWaitingTime: z.number().min(1, "Estimated waiting time is required"),
   remainingSlots: z.number().min(0, "Remaining slots cannot be negative"),
   currentNumber: z.number().min(0, "Current number cannot be negative"),
+  fee: z.number().min(0, "Doctor fee cannot be negative"),
 });

@@ -40,6 +40,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useTransition } from "react";
 import axios from "axios";
 import { toast } from "sonner";
@@ -101,14 +111,27 @@ const CreateChannelComponent = () => {
       estimateWaitingTime: 1,
       remainingSlots: 0,
       currentNumber: 0,
+      fee: 0,
     },
   });
 
-  const submitHandler = (data: z.infer<typeof createChannelSchema>) => {
+  const [open, setOpen] = React.useState(false);
+  const [confirmationOpen, setConfirmationOpen] = React.useState(false);
+  const [pendingData, setPendingData] =
+    React.useState<z.infer<typeof createChannelSchema> | null>(null);
+
+  const onSubmit = (data: z.infer<typeof createChannelSchema>) => {
+    setPendingData(data);
+    setConfirmationOpen(true);
+  };
+
+  const handleFinalSubmit = () => {
+    if (!pendingData) return;
+
     startTransition(async () => {
       const updatedData = {
-        ...data,
-        remainingSlots: data.totalSlots,
+        ...pendingData,
+        remainingSlots: pendingData.totalSlots,
       };
 
       console.log("Submitting Data:", updatedData);
@@ -133,8 +156,8 @@ const CreateChannelComponent = () => {
     });
 
     form.reset();
+    setConfirmationOpen(false);
   };
-  const [open, setOpen] = React.useState(false);
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-50/50 p-4">
@@ -157,7 +180,7 @@ const CreateChannelComponent = () => {
         <div className="p-8">
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit(submitHandler)}
+              onSubmit={form.handleSubmit(onSubmit)}
               className="space-y-6"
             >
               {/* Section: Basic Info */}
@@ -276,43 +299,54 @@ const CreateChannelComponent = () => {
                   name="date"
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
-                      <FormLabel>Date</FormLabel>
-                      <Popover open={open} onOpenChange={setOpen}>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
+                      <InputGroup label="Date" icon={CalendarIcon}>
+                        <Popover open={open} onOpenChange={setOpen}>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                disabled={isPending}
+                                variant={"outline"}
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal bg-slate-50 border-slate-200 text-slate-700 hover:bg-white hover:text-slate-900",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  new Date(field.value).toLocaleDateString()
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 text-slate-500 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent align="center" className="p-0">
+                            <Calendar
                               disabled={isPending}
-                              variant={"outline"}
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                new Date(field.value).toLocaleDateString()
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent align="center">
-                          <Calendar
-                            disabled={isPending}
-                            mode="single"
-                            selected={
-                              field.value ? new Date(field.value) : undefined
-                            }
-                            onSelect={(selectedDate) => {
-                              field.onChange(selectedDate?.toISOString());
-                              setOpen(false);
-                            }}
-                            captionLayout="dropdown"
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                              mode="single"
+                              selected={
+                                field.value ? new Date(field.value) : undefined
+                              }
+                              onSelect={(selectedDate) => {
+                                if (selectedDate) {
+                                  const offsetDate = new Date(
+                                    Date.UTC(
+                                      selectedDate.getFullYear(),
+                                      selectedDate.getMonth(),
+                                      selectedDate.getDate()
+                                    )
+                                  );
+                                  field.onChange(offsetDate.toISOString());
+                                }
+                                setOpen(false);
+                              }}
+                              className="rounded-md border shadow"
+                              captionLayout="dropdown"
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </InputGroup>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -323,18 +357,19 @@ const CreateChannelComponent = () => {
                   name="time"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Time</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input
-                            disabled={isPending}
-                            type="time"
-                            className="w-full"
-                            step="1"
-                            {...field}
-                          />
-                        </div>
-                      </FormControl>
+                      <InputGroup label="Time" icon={Clock}>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              disabled={isPending}
+                              type="time"
+                              className="w-full bg-slate-50 border-slate-200 text-slate-700 [color-scheme:light] hover:bg-white focus:bg-white transition-colors"
+                              step="1"
+                              {...field}
+                            />
+                          </div>
+                        </FormControl>
+                      </InputGroup>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -411,6 +446,28 @@ const CreateChannelComponent = () => {
 
                 <FormField
                   control={form.control}
+                  name="fee"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Doctor Fee (LKR)</FormLabel>
+                      <FormControl>
+                        <Input
+                          disabled={isPending}
+                          type="number"
+                          placeholder="e.g. 2500"
+                          value={field.value === 0 ? "" : field.value}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="state"
                   render={({ field }) => (
                     <FormItem>
@@ -466,6 +523,55 @@ const CreateChannelComponent = () => {
           </Form>
         </div>
       </div>
+
+
+      <AlertDialog open={confirmationOpen} onOpenChange={setConfirmationOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Channel Creation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Please review the details before creating the channel.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {pendingData && (
+            <div className="text-sm text-slate-600 space-y-2 mb-4 bg-slate-50 p-4 rounded-lg border border-slate-100">
+              <p>
+                <strong>Name:</strong> {pendingData.name}
+              </p>
+              <p>
+                <strong>Doctor:</strong>{" "}
+                {doctorList.find((d) => d.email === pendingData.doctorEmail)
+                  ?.name || pendingData.doctorEmail}
+              </p>
+              <p>
+                <strong>Date:</strong>{" "}
+                {pendingData.date
+                  ? new Date(pendingData.date).toLocaleDateString()
+                  : "N/A"}
+              </p>
+              <p>
+                <strong>Time:</strong> {pendingData.time}
+              </p>
+              <p>
+                <strong>Fee:</strong> {pendingData.fee} LKR
+              </p>
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-emerald-600 hover:bg-emerald-700"
+              onClick={(e) => {
+                e.preventDefault();
+                handleFinalSubmit();
+              }}
+              disabled={isPending}
+            >
+              Confirm Creation
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
