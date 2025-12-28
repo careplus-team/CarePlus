@@ -341,7 +341,10 @@ const ManageNoticeComponent = () => {
                             {notice.content}
                           </p>
                           <p className="text-xs text-gray-500">
-                            Created: {notice.date}
+                            Created:{" "}
+                            {notice.createdAt
+                              ? new Date(notice.createdAt).toLocaleString()
+                              : "N/A"}
                           </p>
                         </div>
                         <Button
