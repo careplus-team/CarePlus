@@ -64,7 +64,16 @@ const HomeComponent = () => {
     startTransitionNotice(async () => {
       const noticeData = await axios.get("/api/notice-get-api");
       if (noticeData.data.success) {
-        setNotices(noticeData.data.data || []);
+        // Ensure every notice has a piority value (fallback to 'low') and sort newest-first
+        setNotices(
+          (noticeData.data.data || [])
+            .map((n: any) => ({ ...n, piority: n.piority ?? "low" }))
+            .sort(
+              (a: any, b: any) =>
+                new Date(b.createdAt).getTime() -
+                new Date(a.createdAt).getTime()
+            )
+        );
       } else {
         toast.error("Error fetching notices");
         return;
@@ -81,12 +90,40 @@ const HomeComponent = () => {
           console.log("Realtime update:", payload);
 
           if (payload.eventType === "INSERT") {
-            setNotices((prev) => [payload.new, ...prev]);
+            const newNotice = {
+              ...payload.new,
+              piority: payload.new?.piority ?? "low",
+            };
+            // Dedupe and prepend so new notices always appear at the top
+            setNotices((prev: any) => {
+              const all = [newNotice, ...(prev || [])];
+              const seen = new Set();
+              return all.filter((it: any) => {
+                const id = it?.id ?? JSON.stringify(it);
+                if (seen.has(id)) return false;
+                seen.add(id);
+                return true;
+              });
+            });
           } else if (payload.eventType === "DELETE") {
-            setNotices((prev) => prev.filter((n) => n.id !== payload.old.id));
+            setNotices(
+              (prev) =>
+                (prev as any[])?.filter((n: any) => n.id !== payload.old.id) ||
+                []
+            );
           } else if (payload.eventType === "UPDATE") {
+            const updatedNotice = {
+              ...payload.new,
+              piority: payload.new?.piority ?? "low",
+            };
+            setNotices(
+              (prev) =>
+                (prev as any[])?.map((n: any) =>
+                  n.id === payload.new.id ? updatedNotice : n
+                ) || []
+            );
             setNotices((prev) =>
-              prev.map((n) => (n.id === payload.new.id ? payload.new : n))
+              prev.map((n) => (n.id === payload.new.id ? updatedNotice : n))
             );
           }
         }
@@ -114,7 +151,7 @@ const HomeComponent = () => {
 
     // 2. Subscribe for realtime updates
     const channel = supabaseClient
-      .channel("realtime:notice")
+      .channel("realtime:healthtip")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "healthtip" },
@@ -934,8 +971,7 @@ const HomeComponent = () => {
                           </div>
                           <div>
                             <h4 className="font-semibold text-gray-900">
-                           
-                              {appointment.name|| "Loading..."}
+                              {appointment.name || "Loading..."}
                             </h4>
 
                             <h4 className="font-semibold text-gray-900">
@@ -1101,8 +1137,8 @@ const HomeComponent = () => {
                               />
                             </div>
                             <div>
-                                <h4 className="font-bold mb-2 text-gray-900 group-hover:text-blue-700 transition-colors">
-                                {channeling.name ? channeling.name : ""} 
+                              <h4 className="font-bold mb-2 text-gray-900 group-hover:text-blue-700 transition-colors">
+                                {channeling.name ? channeling.name : ""}
                               </h4>
 
                               <p className=" text-gray-900 group-hover:text-blue-700 transition-colors">
@@ -1224,7 +1260,7 @@ const HomeComponent = () => {
               </div>
             </div>
 
-            {/* Health Notices */}
+            {/*  Notices */}
             <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden md:min-h-[400px]">
               <div className="bg-gradient-to-r from-amber-500 to-orange-600 p-6 text-white">
                 <h3 className="text-xl font-bold mb-2">Important Notices</h3>

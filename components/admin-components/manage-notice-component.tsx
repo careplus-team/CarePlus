@@ -41,7 +41,16 @@ const ManageNoticeComponent = () => {
     startTransitionNotice(async () => {
       const noticeData = await axios.get("/api/notice-get-api");
       if (noticeData.data.success) {
-        setNotices(noticeData.data.data || []);
+        // Ensure every notice has a piority value (fallback to 'low') and sort newest-first
+        setNotices(
+          (noticeData.data.data || [])
+            .map((n: any) => ({ ...n, piority: n.piority ?? "low" }))
+            .sort(
+              (a: any, b: any) =>
+                new Date(b.createdAt).getTime() -
+                new Date(a.createdAt).getTime()
+            )
+        );
       } else {
         toast.error("Error fetching notices");
         return;
@@ -58,12 +67,36 @@ const ManageNoticeComponent = () => {
           console.log("Realtime update:", payload);
 
           if (payload.eventType === "INSERT") {
-            setNotices((prev) => [payload.new, ...prev]);
+            const newNotice = {
+              ...payload.new,
+              piority: payload.new?.piority ?? "low",
+            };
+            setNotices((prev: any) => {
+              const all = [newNotice, ...(prev || [])];
+              const seen = new Set();
+              return all.filter((it: any) => {
+                const id = it?.id ?? JSON.stringify(it);
+                if (seen.has(id)) return false;
+                seen.add(id);
+                return true;
+              });
+            });
           } else if (payload.eventType === "DELETE") {
-            setNotices((prev) => prev.filter((n) => n.id !== payload.old.id));
+            setNotices(
+              (prev) =>
+                (prev as any[])?.filter((n: any) => n.id !== payload.old.id) ||
+                []
+            );
           } else if (payload.eventType === "UPDATE") {
-            setNotices((prev) =>
-              prev.map((n) => (n.id === payload.new.id ? payload.new : n))
+            const updatedNotice = {
+              ...payload.new,
+              piority: payload.new?.piority ?? "low",
+            };
+            setNotices(
+              (prev) =>
+                (prev as any[])?.map((n: any) =>
+                  n.id === payload.new.id ? updatedNotice : n
+                ) || []
             );
           }
         }
@@ -298,8 +331,10 @@ const ManageNoticeComponent = () => {
                               {notice.piority === "low" && (
                                 <Info className="inline h-3 w-3 mr-1" />
                               )}
-                              {notice.piority.charAt(0).toUpperCase() +
-                                notice.piority.slice(1)}
+                              {(notice.piority ?? "low")
+                                .charAt(0)
+                                .toUpperCase() +
+                                (notice.piority ?? "low").slice(1)}
                             </div>
                           </div>
                           <p className="text-sm text-gray-600 line-clamp-2">
