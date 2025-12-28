@@ -904,7 +904,7 @@ const HomeComponent = () => {
                               alt="Doctor"
                               width={40}
                               height={40}
-                              className="rounded-full object-cover"
+                              className="rounded-full object-cover  aspect-square"
                             />
                           </div>
                           <div>
@@ -1065,6 +1065,7 @@ const HomeComponent = () => {
                                 height={100}
                                 width={100}
                                 alt="Doctor"
+                                className="object-cover aspect-square rounded-full"
                               />
                             </div>
                             <div>
