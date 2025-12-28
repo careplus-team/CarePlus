@@ -211,7 +211,10 @@ const ManageHealthTipsComponent = () => {
                           </div>
 
                           <p className="text-xs text-gray-500">
-                            Created: {tip.date}
+                            Created:{" "}
+                            {tip.createdAt
+                              ? new Date(tip.createdAt).toLocaleString()
+                              : "N/A"}
                           </p>
                         </div>
                         <Button
