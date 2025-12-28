@@ -1,10 +1,10 @@
-import PatientListViewComponent from "@/components/doctor-components/doctor-dashboard/patient-list-view-component";
+import PatientListShow from "@/components/doctor-components/PatientList-show/PatientListShow";
 import React from "react";
 
 const Doctor = () => {
   return (
     <div>
-      <PatientListViewComponent />
+      <PatientListShow />
     </div>
   );
 };

@@ -54,6 +54,37 @@ export default function ChannelQueueMonitor({
   const [doctor, setDoctor] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const [isVisited, setIsVisited] = useState(false);
+
+  // Update isVisited state when channel data changes
+  useEffect(() => {
+    if (channel && myBooking) {
+      // Robust accessor for visitedNumbers (handling casing: visitedNumbers vs visitednumbers)
+      const rawList = channel.visitedNumbers || (channel as any).visitednumbers || [];
+      // Ensure we treat everything as numbers for comparison
+      const visitedList = Array.isArray(rawList) ? rawList.map((n: any) => Number(n)) : [];
+      const myNumber = Number(myBooking.patientNumber);
+
+      const visited = visitedList.includes(myNumber-1);
+
+      console.log("Monitor Logic Deep Check:", {
+        keys: Object.keys(channel),
+        rawList,
+        visitedList,
+        myNumber,
+        isVisited: visited,
+      });
+      
+      setIsVisited(visited);
+    }
+  }, [channel, myBooking]);
+
+  // Handle auto-redirect when visited
+  useEffect(() => {
+    if (isVisited) {
+      router.push("/home");
+    }
+  }, [isVisited, router]);
   // Fetch initial data
   const fetchInitial = async () => {
     setLoading(true);
@@ -345,16 +376,18 @@ export default function ChannelQueueMonitor({
                   <Activity className="w-3 h-3" />
                   Status:{" "}
                   <span className="text-white font-medium capitalize">
-                    {myBooking.state ? "Visited" : "Unvisited"}
+                    {isVisited ? "Visited" : "Unvisited"}
                   </span>
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-white/10">
                   <div className="text-xs text-indigo-300">
-                    Estimated Wait Time
+                    {isVisited ? "Session Status" : "Estimated Wait Time"}
                   </div>
                   <div className="text-xl font-bold text-emerald-400 mt-0.5">
-                    {eta
+                    {isVisited
+                      ? "Completed"
+                      : eta
                       ? eta.minutes === 0
                         ? "You're Next!"
                         : `~${eta.minutes} mins`

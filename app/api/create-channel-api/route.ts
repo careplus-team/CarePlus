@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
       description,
       remainingSlots,
       currentNumber,
+      fee,
     } = await req.json();
 
     const createdChannelData = await supabaseServer
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
         description,
         remainingSlots,
         currentNumber,
+        fee,
       })
       .select("*")
       .maybeSingle();

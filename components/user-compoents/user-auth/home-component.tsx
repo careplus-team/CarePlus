@@ -64,7 +64,16 @@ const HomeComponent = () => {
     startTransitionNotice(async () => {
       const noticeData = await axios.get("/api/notice-get-api");
       if (noticeData.data.success) {
-        setNotices(noticeData.data.data || []);
+        // Ensure every notice has a piority value (fallback to 'low') and sort newest-first
+        setNotices(
+          (noticeData.data.data || [])
+            .map((n: any) => ({ ...n, piority: n.piority ?? "low" }))
+            .sort(
+              (a: any, b: any) =>
+                new Date(b.createdAt).getTime() -
+                new Date(a.createdAt).getTime()
+            )
+        );
       } else {
         toast.error("Error fetching notices");
         return;
@@ -81,12 +90,40 @@ const HomeComponent = () => {
           console.log("Realtime update:", payload);
 
           if (payload.eventType === "INSERT") {
-            setNotices((prev) => [payload.new, ...prev]);
+            const newNotice = {
+              ...payload.new,
+              piority: payload.new?.piority ?? "low",
+            };
+            // Dedupe and prepend so new notices always appear at the top
+            setNotices((prev: any) => {
+              const all = [newNotice, ...(prev || [])];
+              const seen = new Set();
+              return all.filter((it: any) => {
+                const id = it?.id ?? JSON.stringify(it);
+                if (seen.has(id)) return false;
+                seen.add(id);
+                return true;
+              });
+            });
           } else if (payload.eventType === "DELETE") {
-            setNotices((prev) => prev.filter((n) => n.id !== payload.old.id));
+            setNotices(
+              (prev) =>
+                (prev as any[])?.filter((n: any) => n.id !== payload.old.id) ||
+                []
+            );
           } else if (payload.eventType === "UPDATE") {
+            const updatedNotice = {
+              ...payload.new,
+              piority: payload.new?.piority ?? "low",
+            };
+            setNotices(
+              (prev) =>
+                (prev as any[])?.map((n: any) =>
+                  n.id === payload.new.id ? updatedNotice : n
+                ) || []
+            );
             setNotices((prev) =>
-              prev.map((n) => (n.id === payload.new.id ? payload.new : n))
+              prev.map((n) => (n.id === payload.new.id ? updatedNotice : n))
             );
           }
         }
@@ -114,7 +151,7 @@ const HomeComponent = () => {
 
     // 2. Subscribe for realtime updates
     const channel = supabaseClient
-      .channel("realtime:notice")
+      .channel("realtime:healthtip")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "healthtip" },
@@ -229,7 +266,14 @@ const HomeComponent = () => {
                 channelId: channeling.channelId,
               });
               const channelState = ch.data.success ? ch.data.data.state : null;
-              return { ...channeling, channelState };
+              const channelName = ch.data.success ? ch.data.data.name : null;
+              const channelFee = ch.data.success ? ch.data.data.fee : 0;
+              return {
+                ...channeling,
+                channelState,
+                name: channelName,
+                fee: channelFee,
+              };
             } catch (e) {
               console.error(
                 "Error fetching channel details for appointment",
@@ -281,8 +325,23 @@ const HomeComponent = () => {
         }
       )
       .subscribe();
+
+    // Add realtime subscription to channel table for status updates
+    const channelStatusSub = supabaseClient
+      .channel("realtime:channel_status")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "channel" },
+        (payload) => {
+          console.log("Realtime channel status update:", payload);
+          fetchUpcommingChannelings();
+        }
+      )
+      .subscribe();
+
     return () => {
       supabaseClient.removeChannel(channel);
+      supabaseClient.removeChannel(channelStatusSub);
     };
   }, [userInfo]);
   const getUserInfoFromDb = (email: any) => {
@@ -880,7 +939,10 @@ const HomeComponent = () => {
                     {upCommingChannelingData.map((appointment, index) => (
                       <div
                         onClick={() => {
-                          if (appointment.channelState === "started") {
+                          if (
+                            appointment.channelState === "started" ||
+                            appointment.channelState === "active"
+                          ) {
                             router.push(
                               `/channel-monitor/${appointment.channelId}`
                             );
@@ -904,10 +966,14 @@ const HomeComponent = () => {
                               alt="Doctor"
                               width={40}
                               height={40}
-                              className="rounded-full object-cover"
+                              className="rounded-full object-cover  aspect-square"
                             />
                           </div>
                           <div>
+                            <h4 className="font-semibold text-gray-900">
+                              {appointment.name || "Loading..."}
+                            </h4>
+
                             <h4 className="font-semibold text-gray-900">
                               Doctor :{" "}
                               {upDoctorData.find(
@@ -929,12 +995,14 @@ const HomeComponent = () => {
                         <div>
                           <div
                             className={`px-3 py-1 flex justify-center rounded-full text-xs font-medium ${
-                              appointment.channelState === "started"
+                              appointment.channelState === "started" ||
+                              appointment.channelState === "active"
                                 ? "bg-green-100 text-green-700"
                                 : "bg-yellow-100 text-yellow-700"
                             }`}
                           >
-                            {appointment.channelState === "started"
+                            {appointment.channelState === "started" ||
+                            appointment.channelState === "active"
                               ? "Ongoing"
                               : "Upcoming"}
                           </div>
@@ -1065,14 +1133,19 @@ const HomeComponent = () => {
                                 height={100}
                                 width={100}
                                 alt="Doctor"
+                                className="object-cover aspect-square rounded-full"
                               />
                             </div>
                             <div>
-                              <h4 className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors">
+                              <h4 className="font-bold mb-2 text-gray-900 group-hover:text-blue-700 transition-colors">
+                                {channeling.name ? channeling.name : ""}
+                              </h4>
+
+                              <p className=" text-gray-900 group-hover:text-blue-700 transition-colors">
                                 {availableChannelListDoctorData.find(
                                   (doc) => doc.email === channeling.doctorEmail
                                 )?.name || "Loading..."}
-                              </h4>
+                              </p>
                               <p className="text-sm text-blue-600 font-medium">
                                 {availableChannelListDoctorData.find(
                                   (doc) => doc.email === channeling.doctorEmail
@@ -1187,7 +1260,7 @@ const HomeComponent = () => {
               </div>
             </div>
 
-            {/* Health Notices */}
+            {/*  Notices */}
             <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden md:min-h-[400px]">
               <div className="bg-gradient-to-r from-amber-500 to-orange-600 p-6 text-white">
                 <h3 className="text-xl font-bold mb-2">Important Notices</h3>

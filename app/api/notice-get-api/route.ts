@@ -4,8 +4,11 @@ import { NextResponse, NextRequest } from "next/server";
 // Create GET API to get notices
 export async function GET() {
   try {
-    // Fetch the notices from the "notice" table
-    const noticeData = await supabaseServer.from("notice").select("*");
+    // Fetch the notices from the "notice" table (newest first)
+    const noticeData = await supabaseServer
+      .from("notice")
+      .select("*")
+      .order("createdAt", { ascending: false });
 
     console.log(noticeData);
     // Check for errors
