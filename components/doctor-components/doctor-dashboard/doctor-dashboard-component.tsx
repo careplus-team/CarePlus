@@ -684,6 +684,7 @@ const DoctorDashboard = () => {
                                 </div>
                               </div>
                             </div>
+                            // <--- THIS DIV WAS MISSING IN YOUR ORIGINAL CODE
                           ))
                         ) : (
                           <p className="text-gray-500">No channels assigned.</p>
