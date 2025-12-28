@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { createClient } from "@/lib/supabase/client";
 
 import {
   UserPlus,
@@ -30,15 +32,48 @@ import {
   Mail,
   Calendar,
   Users,
+  BookUserIcon,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import axios from "axios";
+import { CldUploadWidget } from "next-cloudinary";
+import Image from "next/image";
+import { Textarea } from "@/components/ui/textarea";
+import { doctorRegistrationSchema } from "@/lib/zod-schema/doctor-registration-schema";
+import z from "zod";
 
 function DoctorRegistrationComponent() {
-  const form = useForm({
+  const [isPending, startTransition] = useTransition();
+  const [profilePicButtonText, setProfilePicButtonText] = useState(
+    "Add Profile Picture"
+  );
+  const client = createClient();
+  const router = useRouter();
+
+  //already loggedin user handle
+
+  const alreadyLoggedInUserActionHandle = () => {
+    startTransition(async () => {
+      const userData = await client.auth.getUser();
+      if (userData.data.user) {
+        await client.auth.signOut();
+        toast.error("You are already logged in", {
+          description: "Automatically  sign outed...",
+        });
+      }
+    });
+  };
+
+  useEffect(() => {
+    alreadyLoggedInUserActionHandle();
+  }, []);
+  const form = useForm<z.infer<typeof doctorRegistrationSchema>>({
     defaultValues: {
       name: "",
       email: "",
-      gender: "",
-      medicalRegistrationNumber: "",
+      gender: undefined,
+      medicalregno: "",
       mobileNumber: "",
       address: "",
       dateOfBirth: "",
@@ -46,17 +81,101 @@ function DoctorRegistrationComponent() {
       currentWorkplace: "",
       password: "",
       confirmPassword: "",
+      bio: "",
+      profilePicture: "",
+      OPD: false,
     },
   });
+  const [profilePic, setProfilePic] = useState("/temp_user.webp");
 
-  function onSubmit(values: any) {
-    console.log(values);
-    alert("Check the console for form data!");
-  }
+  const registerUserFunction = (
+    data: z.infer<typeof doctorRegistrationSchema>
+  ) => {
+    console.log("Register user function called with data:", data);
+
+    startTransition(async () => {
+      console.log("Registering user with data:", data);
+      const client = createClient();
+      const userData = await client.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/confirm?next=/doctor/doctor-dashboard`,
+        },
+      });
+      console.log("User registered:", userData);
+      if (!userData.data.user?.user_metadata.email) {
+        //get error when already signed-up user (email verified one) try to signup again
+
+        toast("Already Exist User", {
+          description: "You are already registered . Please login.",
+          action: {
+            label: "Login",
+            onClick: () => router.push("/doctor/doctor-login"),
+          },
+        });
+        return;
+      }
+
+      if (userData.data.user?.id) {
+        // Calculate age from dateofbirth
+        let age = undefined;
+        if (data.dateOfBirth) {
+          const dob = new Date(data.dateOfBirth);
+          const today = new Date();
+          age = today.getFullYear() - dob.getFullYear();
+          const m = today.getMonth() - dob.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+            age--;
+          }
+        }
+
+        const registeredDoctorData = await axios.post(
+          "/api/register-doctor-api",
+          data
+        );
+        console.log("User data saved:", registeredDoctorData);
+
+        if (
+          registeredDoctorData.data.message ===
+          "Doctor with this email already exists"
+        ) {
+          //this error occure when user who already sign-up and not verified his email try to resign-up
+          toast("Check Your Email To Verify", {
+            description:
+              "You are already registered. Please check your email to verify.",
+            action: {
+              label: "Open Email",
+              onClick: () => window.open("https://mail.google.com", "_blank"),
+            },
+          });
+          return;
+        } else {
+          toast("Registration Successful", {
+            description: "Please Check Your Email to Verify.",
+            action: {
+              label: "Open Email",
+              onClick: () => window.open("https://mail.google.com", "_blank"),
+            },
+          });
+          setTimeout(() => {
+            router.push("doctor/doctor-login");
+          }, 5000);
+        }
+      }
+    });
+    setProfilePic("/temp_user.webp");
+    form.reset();
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-5xl bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
+      <div className=" absolute top-4 left-4 ">
+        <p className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500  to-green-500 font-bold  text-2xl">
+          <a href="/">CarePlus</a>
+        </p>
+      </div>
+      <div className="w-full  mt-10 max-w-5xl bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 text-center">
           <div className="flex justify-center mb-4">
@@ -75,28 +194,101 @@ function DoctorRegistrationComponent() {
         <div className="p-8 md:p-12">
           {/* Profile Picture Section */}
           <div className="flex flex-col items-center mb-8">
-            <div className="relative">
-              <div className="w-32 h-32 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
-                <UserPlus className="h-16 w-16 text-blue-600" />
+            <div className="w-full md:w-auto flex flex-col items-center justify-start mb-4 md:mb-0">
+              <div className="w-28 h-28 md:w-32 md:h-32 xl:w-36 xl:h-36 rounded-full bg-gradient-to-br from-[#e0e7ef] to-[#b6dfff] border-4 border-[#00B4D8] flex items-center justify-center shadow-lg overflow-hidden">
+                <Button
+                  disabled={isPending}
+                  className="bg-transparent hover:bg-transparent focus:ring-0 w-28 h-28 md:w-32 md:h-32 xl:w-36 xl:h-36 rounded-full"
+                >
+                  <Image
+                    className="min-w-32  object-cover aspect-square"
+                    src={profilePic}
+                    alt="Placeholder Icon"
+                    objectFit="contain"
+                    width={100}
+                    height={100}
+                  />
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="absolute bottom-0 right-0 rounded-full w-10 h-10 p-0 bg-white border-2 border-blue-200 hover:bg-blue-50"
+              <CldUploadWidget
+                uploadPreset="careplus"
+                options={{
+                  sources: [
+                    "local",
+                    "url",
+                    "camera",
+                    "google_drive",
+                    "facebook",
+                  ],
+                  clientAllowedFormats: ["jpg", "jpeg", "png", "gif", "webp"],
+                  multiple: false,
+                  folder: "user_profile_pics",
+                  maxFiles: 1,
+                  resourceType: "image",
+                  tags: ["profile", "user"],
+                }}
+                onOpen={() => {
+                  setProfilePic("/loading01.gif");
+                }}
+                onSuccess={(result, widget) => {
+                  console.log("Upload added:", result);
+                  setProfilePic(
+                    typeof result.info === "object" &&
+                      result.info !== null &&
+                      "secure_url" in result.info
+                      ? String(
+                          (result.info as { secure_url?: string }).secure_url
+                        )
+                      : ""
+                  );
+                  if (result.event === "success") {
+                    form.setValue(
+                      "profilePicture",
+                      typeof result.info === "object" &&
+                        result.info !== null &&
+                        "secure_url" in result.info
+                        ? (result.info as { secure_url?: string }).secure_url ||
+                            ""
+                        : ""
+                    );
+                  }
+                  console.log(form.getValues());
+                }}
+                onAbort={() => {
+                  console.log("Upload widget closed", profilePic);
+                  if (
+                    profilePic === "/temp_user.webp" ||
+                    profilePic === "/loading01.gif"
+                  ) {
+                    setProfilePic("/temp_user.webp");
+                    form.setValue("profilePicture", "/temp_user.webp");
+                  }
+                  console.log(form.getValues());
+                }}
               >
-                <Upload className="h-4 w-4 text-blue-600" />
-              </Button>
+                {({ open }) => {
+                  return (
+                    <Button
+                      disabled={isPending}
+                      className="mt-5 bg-transparent text-black border-2 hover:bg-[#17431E] hover:text-white transition-colors duration-500"
+                      onClick={() => {
+                        open();
+                        setProfilePicButtonText("Update Profile Picture");
+                      }}
+                    >
+                      {profilePicButtonText}
+                    </Button>
+                  );
+                }}
+              </CldUploadWidget>
             </div>
-            <Button
-              variant="link"
-              className="mt-3 text-blue-600 hover:text-blue-700 font-medium"
-            >
-              Upload Profile Picture
-            </Button>
           </div>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form
+              onSubmit={form.handleSubmit(registerUserFunction)}
+              className="space-y-6"
+            >
               {/* Personal Information Section */}
               <div className="space-y-6">
                 <div className="flex items-center gap-2 mb-4">
@@ -117,6 +309,7 @@ function DoctorRegistrationComponent() {
                         </FormLabel>
                         <FormControl>
                           <Input
+                            disabled={isPending}
                             placeholder="Enter your full name"
                             className="h-12 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                             {...field}
@@ -137,6 +330,7 @@ function DoctorRegistrationComponent() {
                         </FormLabel>
                         <FormControl>
                           <Input
+                            disabled={isPending}
                             type="email"
                             placeholder="doctor@example.com"
                             className="h-12 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500"
@@ -159,6 +353,7 @@ function DoctorRegistrationComponent() {
                         <FormControl>
                           <Input
                             type="tel"
+                            disabled={isPending}
                             placeholder="07xxxxxxxx"
                             className="h-12 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                             {...field}
@@ -180,6 +375,7 @@ function DoctorRegistrationComponent() {
                         <FormControl>
                           <Input
                             type="date"
+                            disabled={isPending}
                             className="h-12 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                             {...field}
                           />
@@ -198,6 +394,7 @@ function DoctorRegistrationComponent() {
                           Gender
                         </FormLabel>
                         <Select
+                          disabled={isPending}
                           onValueChange={field.onChange}
                           defaultValue={field.value}
                         >
@@ -218,6 +415,28 @@ function DoctorRegistrationComponent() {
                   />
                   <FormField
                     control={form.control}
+                    name="bio"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                          <BookUserIcon className="h-4 w-4" />
+                          Bio
+                        </FormLabel>
+                        <FormControl>
+                          <Textarea
+                            disabled={isPending}
+                            placeholder="Briefly describe yourself"
+                            className="h-12 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
                     name="address"
                     render={({ field }) => (
                       <FormItem className="md:col-span-2">
@@ -227,6 +446,7 @@ function DoctorRegistrationComponent() {
                         </FormLabel>
                         <FormControl>
                           <Input
+                            disabled={isPending}
                             placeholder="Enter your complete address"
                             className="h-12 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                             {...field}
@@ -250,7 +470,7 @@ function DoctorRegistrationComponent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
-                    name="medicalRegistrationNumber"
+                    name="medicalregno"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm font-semibold text-gray-700">
@@ -258,6 +478,7 @@ function DoctorRegistrationComponent() {
                         </FormLabel>
                         <FormControl>
                           <Input
+                            disabled={isPending}
                             placeholder="Enter your registration number"
                             className="h-12 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                             {...field}
@@ -277,6 +498,7 @@ function DoctorRegistrationComponent() {
                         </FormLabel>
                         <FormControl>
                           <Input
+                            disabled={isPending}
                             placeholder="e.g., Cardiology, Neurology"
                             className="h-12 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                             {...field}
@@ -296,12 +518,36 @@ function DoctorRegistrationComponent() {
                         </FormLabel>
                         <FormControl>
                           <Input
+                            disabled={isPending}
                             placeholder="e.g., City General Hospital"
                             className="h-12 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                             {...field}
                           />
                         </FormControl>
                         <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="OPD"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-xl border border-gray-200 p-4 md:col-span-2">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="text-sm font-semibold text-gray-700">
+                            OPD Services
+                          </FormLabel>
+                          <p className="text-sm text-gray-500">
+                            Check this box if you will be providing Outpatient
+                            Department (OPD) services.
+                          </p>
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -329,6 +575,7 @@ function DoctorRegistrationComponent() {
                         </FormLabel>
                         <FormControl>
                           <Input
+                            disabled={isPending}
                             type="password"
                             placeholder="Create a strong password"
                             className="h-12 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500"
@@ -349,6 +596,7 @@ function DoctorRegistrationComponent() {
                         </FormLabel>
                         <FormControl>
                           <Input
+                            disabled={isPending}
                             type="password"
                             placeholder="Confirm your password"
                             className="h-12 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500"
@@ -363,11 +611,12 @@ function DoctorRegistrationComponent() {
               </div>
 
               <Button
+                disabled={isPending}
                 type="submit"
                 className="w-full h-14 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-lg"
               >
                 <UserPlus className="h-5 w-5 mr-2" />
-                Register as Doctor
+                {isPending ? "Registering..." : "Register as Doctor"}
               </Button>
             </form>
           </Form>
@@ -375,7 +624,7 @@ function DoctorRegistrationComponent() {
           <p className="text-center text-gray-600 mt-8">
             Already registered?{" "}
             <a
-              href="/doctor/login"
+              href="/doctor/doctor-login"
               className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
             >
               Sign in here

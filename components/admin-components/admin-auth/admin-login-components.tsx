@@ -31,10 +31,12 @@ import {
   Stethoscope,
   Heart,
   Activity,
-  UserCheck
+  UserCheck,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import axios from "axios";
 import { useState } from "react";
+import Link from "next/link";
 
 const AdminLoginComponent = () => {
   const router = useRouter();
@@ -56,7 +58,9 @@ const AdminLoginComponent = () => {
     const checkUserSession = async () => {
       const { data } = await client.auth.getUser();
       if (data.user) {
-        toast.info("Already logged in", { description: "Redirecting to your dashboard..." });
+        toast.info("Already logged in", {
+          description: "Redirecting to your dashboard...",
+        });
         router.push("/admin/dashboard");
       }
     };
@@ -66,6 +70,25 @@ const AdminLoginComponent = () => {
   // Handle form submission and Supabase authentication
   const handleAdminLogin = (values: z.infer<typeof LoginSchema>) => {
     startTransition(async () => {
+      try {
+        // Verify user's role via server API before attempting sign-in
+        const resp = await axios.post("/api/check-admin", { email: values.email });
+        if (!resp?.data?.isAdmin) {
+          toast.error("Unauthorized", {
+            description:
+              "You are not authorized to access the admin portal. Redirecting to user login...",
+          });
+          router.push("/login");
+          return;
+        }
+      } catch (err) {
+        console.error("Role check failed", err);
+        toast.error("Authorization check failed", {
+          description: "Unable to verify admin role. Please try again later.",
+        });
+        return;
+      }
+
       const { error } = await client.auth.signInWithPassword({
         email: values.email,
         password: values.password,
@@ -73,7 +96,8 @@ const AdminLoginComponent = () => {
 
       if (error) {
         toast.error("Login Failed", {
-          description: error.message || "Please check your credentials and try again.",
+          description:
+            error.message || "Please check your credentials and try again.",
         });
         return;
       }
@@ -82,7 +106,7 @@ const AdminLoginComponent = () => {
         description: "Redirecting to the admin dashboard...",
       });
 
-      router.push("/admin/dashboard");
+      router.push("/admin");
     });
   };
 
@@ -96,24 +120,15 @@ const AdminLoginComponent = () => {
       </div>
 
       {/* Logo */}
-      <div className="absolute top-8 left-8 z-10">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg">
-            <Stethoscope className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-              CarePlus
-            </h1>
-            <p className="text-xs text-gray-600 font-medium">Admin Portal</p>
-          </div>
-        </div>
+      <div className=" absolute top-4 left-8 ">
+        <p className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500  to-green-500 font-bold  text-2xl">
+          <a href="/home">CarePlus</a>
+        </p>
       </div>
 
       {/* Main login card */}
       <div className="w-full max-w-6xl mx-auto relative z-10">
         <div className="grid lg:grid-cols-2 gap-8 items-center">
-
           {/* Left side - Hero content */}
           <div className="hidden lg:block space-y-8">
             <div className="space-y-6">
@@ -125,31 +140,9 @@ const AdminLoginComponent = () => {
                   </span>
                 </h2>
                 <p className="text-lg text-gray-600 leading-relaxed">
-                  Access your administrative dashboard to manage patient care, monitor system health, and ensure optimal healthcare delivery.
+                  Access your administrative dashboard to manage patient care,
+                  monitor system health, and ensure optimal healthcare delivery.
                 </p>
-              </div>
-
-              {/* Feature highlights */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center space-x-3 p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-white/20 shadow-sm">
-                  <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-500 rounded-lg flex items-center justify-center">
-                    <Heart className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">Patient Care</p>
-                    <p className="text-sm text-gray-600">Manage & monitor</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-3 p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-white/20 shadow-sm">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-                    <Activity className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">System Health</p>
-                    <p className="text-sm text-gray-600">Real-time monitoring</p>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -161,12 +154,19 @@ const AdminLoginComponent = () => {
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <Shield className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Secure Admin Access</h3>
-                <p className="text-gray-600">Please sign in with your credentials</p>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  Secure Admin Access
+                </h3>
+                <p className="text-gray-600">
+                  Please sign in with your credentials
+                </p>
               </div>
 
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleAdminLogin)} className="space-y-6">
+                <form
+                  onSubmit={form.handleSubmit(handleAdminLogin)}
+                  className="space-y-6"
+                >
                   <FormField
                     control={form.control}
                     name="email"
@@ -215,7 +215,11 @@ const AdminLoginComponent = () => {
                               onClick={() => setShowPassword(!showPassword)}
                               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
                             >
-                              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                              {showPassword ? (
+                                <EyeOff className="w-5 h-5" />
+                              ) : (
+                                <Eye className="w-5 h-5" />
+                              )}
                             </button>
                           </div>
                         </FormControl>
@@ -223,6 +227,14 @@ const AdminLoginComponent = () => {
                       </FormItem>
                     )}
                   />
+                  <div className="mt-6 ">
+                    <Link
+                      href="/reset-password"
+                      className="text-sm text-blue-600 flex items-start justify-start gap-2"
+                    >
+                      Reset Password
+                    </Link>
+                  </div>
 
                   <Button
                     type="submit"
@@ -245,13 +257,6 @@ const AdminLoginComponent = () => {
                   </Button>
                 </form>
               </Form>
-
-              <div className="mt-6 text-center">
-                <p className="text-sm text-gray-600 flex items-center justify-center gap-2">
-                  <Lock className="w-4 h-4" />
-                  Secure SSL encrypted connection
-                </p>
-              </div>
             </div>
           </div>
         </div>

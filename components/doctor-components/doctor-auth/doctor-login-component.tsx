@@ -32,35 +32,44 @@ const DoctorLoginComponent = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [initChecked, setInitChecked] = useState(true);
+
+  const checkAuth = async () => {
+    console.log("Checking auth session");
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    console.log("Current user:", user);
+    if (user) {
+      // Check if user is a doctor
+      try {
+        const response = await axios.post("/api/doctor-details-get-api", {
+          email: user.email,
+        });
+        console.log("Auth check response:", response);
+        if (response.data.success) {
+          const doctorProfile = response.data.data;
+          console.log("Doctor Profile:", doctorProfile);
+          router.push("/doctor/doctor-dashboard");
+          console.log("user is a doctor, redirecting to dashboard");
+        }
+      } catch (error) {
+        // User is logged in but not a doctor, sign out
+        await supabase.auth.signOut();
+      }
+    }
+    setInitChecked(false);
+  };
 
   // Check if already logged in
   useEffect(() => {
-    const checkAuth = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        // Check if user is a doctor
-        try {
-          const response = await axios.post("/api/doctor-details-get-api", {
-            email,
-          });
-          if (response.data.success) {
-            const doctorProfile = response.data.data;
-            console.log("Doctor Profile:", doctorProfile);
-            //router.push("/doctor/dashboard");
-            console.log("user is a doctor, redirecting to dashboard");
-          }
-        } catch (error) {
-          // User is logged in but not a doctor, sign out
-          await supabase.auth.signOut();
-        }
-      }
-    };
+    console.log("Checking existing auth session");
+
     checkAuth();
   }, []);
 
+  //handle login form submission
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -92,7 +101,7 @@ const DoctorLoginComponent = () => {
 
         // Add a small delay for better UX
         setTimeout(() => {
-          //router.push("/doctor/dashboard");
+          router.push("/doctor/doctor-dashboard");
           console.log("redirecting to doctor dashboard");
         }, 1500);
       } else {
@@ -133,54 +142,12 @@ const DoctorLoginComponent = () => {
               <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
                 CarePlus
               </h1>
+              <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+                Doctor Portal
+              </h1>
               <p className="text-xl text-blue-100 font-medium">
                 Healthcare Excellence at Your Fingertips
               </p>
-            </div>
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 gap-6 w-full max-w-md mb-12">
-              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 text-center border border-white/20">
-                <Users className="w-8 h-8 mx-auto mb-3 text-blue-200" />
-                <div className="text-2xl font-bold">500+</div>
-                <div className="text-sm text-blue-200">Active Doctors</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 text-center border border-white/20">
-                <Award className="w-8 h-8 mx-auto mb-3 text-emerald-200" />
-                <div className="text-2xl font-bold">98%</div>
-                <div className="text-sm text-emerald-200">Satisfaction</div>
-              </div>
-            </div>
-
-            {/* Features */}
-            <div className="space-y-4 w-full max-w-md">
-              <div className="flex items-center space-x-4 text-blue-100">
-                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5" />
-                </div>
-                <span className="font-medium">24/7 Patient Care Access</span>
-              </div>
-              <div className="flex items-center space-x-4 text-blue-100">
-                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5" />
-                </div>
-                <span className="font-medium">Advanced Medical Tools</span>
-              </div>
-              <div className="flex items-center space-x-4 text-blue-100">
-                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5" />
-                </div>
-                <span className="font-medium">Secure & HIPAA Compliant</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Decorative Elements */}
-          <div className="absolute bottom-8 left-8 right-8">
-            <div className="flex justify-center space-x-2">
-              <div className="w-2 h-2 bg-white/50 rounded-full"></div>
-              <div className="w-2 h-2 bg-white rounded-full"></div>
-              <div className="w-2 h-2 bg-white/50 rounded-full"></div>
             </div>
           </div>
         </div>
@@ -222,6 +189,7 @@ const DoctorLoginComponent = () => {
                   </label>
                   <div className="relative">
                     <Input
+                      disabled={initChecked || loading}
                       type="email"
                       placeholder="doctor@careplus.com"
                       value={email}
@@ -240,6 +208,7 @@ const DoctorLoginComponent = () => {
                   </label>
                   <div className="relative">
                     <Input
+                      disabled={initChecked || loading}
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
                       value={password}
@@ -263,17 +232,6 @@ const DoctorLoginComponent = () => {
 
                 {/* Remember Me & Forgot Password */}
                 <div className="flex items-center justify-between">
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                    />
-                    <span className="ml-2 text-sm text-gray-600">
-                      Remember me
-                    </span>
-                  </label>
                   <button
                     type="button"
                     className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
@@ -286,10 +244,15 @@ const DoctorLoginComponent = () => {
                 {/* Login Button */}
                 <Button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || initChecked}
                   className="w-full h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
-                  {loading ? (
+                  {initChecked ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                      Checking Session...
+                    </div>
+                  ) : loading ? (
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
                       Signing In...
@@ -320,19 +283,12 @@ const DoctorLoginComponent = () => {
               {/* Register Link */}
               <div className="text-center">
                 <button
-                  onClick={() => router.push("/doctor/signup")}
+                  onClick={() => router.push("/doctor/doctor-registration")}
                   className="text-blue-600 hover:text-blue-800 font-semibold transition-colors"
                 >
                   Register as a Doctor →
                 </button>
               </div>
-            </div>
-
-            {/* Footer */}
-            <div className="mt-8 text-center">
-              <p className="text-sm text-gray-500">
-                Secure healthcare platform • HIPAA Compliant
-              </p>
             </div>
           </div>
         </div>

@@ -29,48 +29,73 @@ import { createClient } from "@/lib/supabase/client";
 
 const ManageNoticeComponent = () => {
   const [isPending, startTransition] = useTransition();
-
   const [notices, setNotices] = useState<any[]>([]);
   const [isPendingNotice, startTransitionNotice] = useTransition();
 
   const supabaseClient = createClient();
 
   useEffect(() => {
-    // 1. Fetch initial notices
-
     startTransitionNotice(async () => {
       const noticeData = await axios.get("/api/notice-get-api");
       if (noticeData.data.success) {
-        setNotices(noticeData.data.data || []);
+        // Ensure every notice has a piority value (fallback to 'low') and sort newest-first
+        setNotices(
+          (noticeData.data.data || [])
+            .map((n: any) => ({ ...n, piority: n.piority ?? "low" }))
+            .sort(
+              (a: any, b: any) =>
+                new Date(b.createdAt).getTime() -
+                new Date(a.createdAt).getTime()
+            )
+        );
       } else {
         toast.error("Error fetching notices");
-        return;
       }
     });
 
-    // 2. Subscribe for realtime updates
     const channel = supabaseClient
       .channel("realtime:notice")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "notice" },
         (payload) => {
-          console.log("Realtime update:", payload);
-
           if (payload.eventType === "INSERT") {
-            setNotices((prev) => [payload.new, ...prev]);
+            const newNotice = {
+              ...payload.new,
+              piority: payload.new?.piority ?? "low",
+            };
+            setNotices((prev: any) => {
+              const all = [newNotice, ...(prev || [])];
+              const seen = new Set();
+              return all.filter((it: any) => {
+                const id = it?.id ?? JSON.stringify(it);
+                if (seen.has(id)) return false;
+                seen.add(id);
+                return true;
+              });
+            });
           } else if (payload.eventType === "DELETE") {
-            setNotices((prev) => prev.filter((n) => n.id !== payload.old.id));
+            setNotices(
+              (prev) =>
+                (prev as any[])?.filter((n: any) => n.id !== payload.old.id) ||
+                []
+            );
           } else if (payload.eventType === "UPDATE") {
-            setNotices((prev) =>
-              prev.map((n) => (n.id === payload.new.id ? payload.new : n))
+            const updatedNotice = {
+              ...payload.new,
+              piority: payload.new?.piority ?? "low",
+            };
+            setNotices(
+              (prev) =>
+                (prev as any[])?.map((n: any) =>
+                  n.id === payload.new.id ? updatedNotice : n
+                ) || []
             );
           }
         }
       )
       .subscribe();
 
-    // 3. Cleanup on unmount
     return () => {
       supabaseClient.removeChannel(channel);
     };
@@ -81,7 +106,6 @@ const ManageNoticeComponent = () => {
       const deletedNotice = await axios.post("/api/notice-delete-api", { id });
       if (deletedNotice.data.error) {
         toast.error("Error deleting notice");
-        return;
       } else {
         toast.success("Notice deleted successfully");
       }
@@ -98,21 +122,17 @@ const ManageNoticeComponent = () => {
   });
 
   const submitAction = (data: z.infer<typeof noticeSchema>) => {
-    console.log(data);
     startTransition(async () => {
       const createdData = await axios.post("/api/create-notice-api", data);
       if (!createdData.data.success) {
         toast.error("Error occurred while creating notice");
-        return;
       } else {
         toast.success("Notice created successfully!");
+        form.reset();
       }
-
-      form.reset();
     });
   };
 
-  console.log("notices", notices);
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -131,10 +151,9 @@ const ManageNoticeComponent = () => {
           </p>
         </div>
 
-        {/* Main Content Grid */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
           {/* Create Notice Section */}
-          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm h-fit">
             <CardHeader className="pb-6">
               <CardTitle className="flex items-center gap-3 text-xl">
                 <div className="p-2 bg-green-100 rounded-lg">
@@ -145,25 +164,15 @@ const ManageNoticeComponent = () => {
             </CardHeader>
             <CardContent>
               <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(submitAction)}
-                  className="space-y-6"
-                >
+                <form onSubmit={form.handleSubmit(submitAction)} className="space-y-6">
                   <FormField
                     control={form.control}
                     name="title"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium text-gray-700">
-                          Notice Title
-                        </FormLabel>
+                        <FormLabel className="text-sm font-medium text-gray-700">Notice Title</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="Enter notice title..."
-                            className="h-11"
-                            {...field}
-                            disabled={isPending}
-                          />
+                          <Input placeholder="Enter notice title..." className="h-11" {...field} disabled={isPending} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -175,9 +184,7 @@ const ManageNoticeComponent = () => {
                     name="content"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium text-gray-700">
-                          Notice Content
-                        </FormLabel>
+                        <FormLabel className="text-sm font-medium text-gray-700">Notice Content</FormLabel>
                         <FormControl>
                           <textarea
                             className="flex min-h-[120px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
@@ -196,14 +203,8 @@ const ManageNoticeComponent = () => {
                     name="piority"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium text-gray-700">
-                          Priority Level
-                        </FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          disabled={isPending}
-                        >
+                        <FormLabel className="text-sm font-medium text-gray-700">Priority Level</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isPending}>
                           <FormControl>
                             <SelectTrigger className="w-full h-11">
                               <SelectValue placeholder="Select priority level" />
@@ -249,7 +250,7 @@ const ManageNoticeComponent = () => {
           </Card>
 
           {/* Manage Notices Section */}
-          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm overflow-hidden">
             <CardHeader className="pb-6">
               <CardTitle className="flex items-center gap-3 text-xl">
                 <div className="p-2 bg-red-100 rounded-lg">
@@ -258,30 +259,28 @@ const ManageNoticeComponent = () => {
                 Manage Notices
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4 max-h-[600px] overflow-y-auto">
-                {/* Sample Notice Cards */}
+            <CardContent className="px-3 sm:px-6">
+              <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
                 {isPendingNotice ? (
                   <div className="flex flex-col items-center justify-center py-12 space-y-4">
                     <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-200 border-t-blue-600"></div>
-                    <p className="text-gray-600 text-sm font-medium">
-                      Loading notices...
-                    </p>
+                    <p className="text-gray-600 text-sm font-medium">Loading notices...</p>
                   </div>
                 ) : (
                   notices.map((notice) => (
                     <div
                       key={notice.id}
-                      className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
+                      className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm"
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold w-32 text-gray-900">
+                      <div className="flex flex-col items-start gap-4">
+                        <div className="w-full space-y-3">
+                          {/* Title and Badge Row */}
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <h3 className="font-bold text-gray-900 text-lg break-words flex-1 min-w-[150px]">
                               {notice.title}
                             </h3>
                             <div
-                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              className={`px-2 py-1 rounded-full text-[10px] sm:text-xs font-semibold flex items-center shrink-0 ${
                                 notice.piority === "high"
                                   ? "bg-red-100 text-red-700"
                                   : notice.piority === "medium"
@@ -298,28 +297,40 @@ const ManageNoticeComponent = () => {
                               {notice.piority === "low" && (
                                 <Info className="inline h-3 w-3 mr-1" />
                               )}
-                              {notice.piority.charAt(0).toUpperCase() +
-                                notice.piority.slice(1)}
+                              {(notice.piority ?? "low")
+                                .charAt(0)
+                                .toUpperCase() +
+                                (notice.piority ?? "low").slice(1)}
                             </div>
                           </div>
-                          <p className="text-sm text-gray-600 line-clamp-2">
+
+                          {/* Updated Content section: removed line-clamp and added pre-wrap */}
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap break-words leading-relaxed">
                             {notice.content}
                           </p>
                           <p className="text-xs text-gray-500">
-                            Created: {notice.date}
+                            Created:{" "}
+                            {notice.createdAt
+                              ? new Date(notice.createdAt).toLocaleString()
+                              : "N/A"}
                           </p>
                         </div>
+
                         <Button
-                          variant="outline"
+                          variant="destructive"
                           size="sm"
-                          className="ml-4 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                          className="w-full bg-red-50 hover:bg-red-100 text-red-600 border-red-100 flex items-center justify-center gap-2 transition-colors"
                           onClick={() => deleteNotice(notice.id)}
                         >
                           <Trash2 className="h-4 w-4" />
+                          <span>Delete Notice</span>
                         </Button>
                       </div>
                     </div>
                   ))
+                )}
+                {!isPendingNotice && notices.length === 0 && (
+                   <p className="text-center text-gray-500 py-10">No notices found.</p>
                 )}
               </div>
             </CardContent>
