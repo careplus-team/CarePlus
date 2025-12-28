@@ -1102,7 +1102,7 @@ const HomeComponent = () => {
                             </div>
                             <div>
                                 <h4 className="font-bold mb-2 text-gray-900 group-hover:text-blue-700 transition-colors">
-                                {channeling.name ? channeling.name : ""} LKR
+                                {channeling.name ? channeling.name : ""} 
                               </h4>
 
                               <p className=" text-gray-900 group-hover:text-blue-700 transition-colors">
