@@ -276,43 +276,45 @@ const CreateChannelComponent = () => {
                   name="date"
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
-                      <FormLabel>Date</FormLabel>
-                      <Popover open={open} onOpenChange={setOpen}>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
+                      <InputGroup label="Date" icon={CalendarIcon}>
+                        <Popover open={open} onOpenChange={setOpen}>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                disabled={isPending}
+                                variant={"outline"}
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal bg-slate-50 border-slate-200 text-slate-700 hover:bg-white hover:text-slate-900",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  new Date(field.value).toLocaleDateString()
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 text-slate-500 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent align="center" className="p-0">
+                            <Calendar
                               disabled={isPending}
-                              variant={"outline"}
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                new Date(field.value).toLocaleDateString()
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent align="center">
-                          <Calendar
-                            disabled={isPending}
-                            mode="single"
-                            selected={
-                              field.value ? new Date(field.value) : undefined
-                            }
-                            onSelect={(selectedDate) => {
-                              field.onChange(selectedDate?.toISOString());
-                              setOpen(false);
-                            }}
-                            captionLayout="dropdown"
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                              mode="single"
+                              selected={
+                                field.value ? new Date(field.value) : undefined
+                              }
+                              onSelect={(selectedDate) => {
+                                field.onChange(selectedDate?.toISOString());
+                                setOpen(false);
+                              }}
+                              className="rounded-md border shadow"
+                              captionLayout="dropdown"
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </InputGroup>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -323,18 +325,19 @@ const CreateChannelComponent = () => {
                   name="time"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Time</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input
-                            disabled={isPending}
-                            type="time"
-                            className="w-full"
-                            step="1"
-                            {...field}
-                          />
-                        </div>
-                      </FormControl>
+                      <InputGroup label="Time" icon={Clock}>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              disabled={isPending}
+                              type="time"
+                              className="w-full bg-slate-50 border-slate-200 text-slate-700 [color-scheme:light] hover:bg-white focus:bg-white transition-colors"
+                              step="1"
+                              {...field}
+                            />
+                          </div>
+                        </FormControl>
+                      </InputGroup>
                       <FormMessage />
                     </FormItem>
                   )}
