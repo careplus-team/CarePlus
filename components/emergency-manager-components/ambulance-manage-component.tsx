@@ -16,6 +16,16 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import LoadingUI from "@/lib/UI-helpers/loading-ui";
 
 // Dynamic import for Leaflet map to avoid SSR issues
@@ -56,6 +66,8 @@ const AmbulanceManagementDummy = () => {
   );
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAmbulances();
@@ -112,6 +124,38 @@ const AmbulanceManagementDummy = () => {
     } finally {
       setUpdating(false);
     }
+  };
+
+  const handleDeleteAmbulance = async () => {
+    if (!deletingId) return;
+    
+    try {
+      const res = await fetch("/api/ambulance-delete-api", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: deletingId }),
+      });
+      const result = await res.json();
+
+      if (result.success) {
+        setAmbulances(ambulances.filter((amb) => amb.id !== deletingId));
+        if (selectedAmbulance?.id === deletingId) {
+          setSelectedAmbulance(null);
+        }
+        setIsDeleteDialogOpen(false);
+        setDeletingId(null);
+      } else {
+        alert("Failed to delete ambulance: " + result.message);
+      }
+    } catch (error) {
+      console.error("Error deleting ambulance:", error);
+      alert("Error deleting ambulance");
+    }
+  };
+
+  const confirmDelete = (id: string) => {
+    setDeletingId(id);
+    setIsDeleteDialogOpen(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -404,16 +448,21 @@ const AmbulanceManagementDummy = () => {
                   
                   {/* Additional Actions */}
                   <div className="grid grid-cols-2 gap-3">
-                     <Button variant="outline" className="h-10 rounded-xl border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900">
-                        View History
-                     </Button>
+               
                      <Button
                         variant="ghost"
-                        className="h-10 rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600"
-                        // Delete functionality
-                        disabled
+                        className={`h-10 rounded-xl flex items-center justify-center gap-2 border transition-all duration-200 ${
+                            selectedAmbulance.availbility === "Maintenance" || selectedAmbulance.availbility === "On-Mission"
+                                ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                                : "bg-white text-red-500 border-red-100 hover:bg-red-50 hover:text-red-600 hover:border-red-200 shadow-sm"
+                        }`}
+                        onClick={() => confirmDelete(selectedAmbulance.id)}
+                        disabled={selectedAmbulance.availbility === "Maintenance" || selectedAmbulance.availbility === "On-Mission"}
                     >
-                        Decommission
+                        <Trash2 className="w-4 h-4" />
+                        {selectedAmbulance.availbility === "Maintenance" || selectedAmbulance.availbility === "On-Mission" 
+                            ? "Cannot Delete" 
+                            : "Decommission Unit"}
                     </Button>
                   </div>
                 </div>
@@ -422,6 +471,24 @@ const AmbulanceManagementDummy = () => {
           </div>
         </div>
       </div>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the ambulance
+              from the fleet and remove its data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeletingId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteAmbulance} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
