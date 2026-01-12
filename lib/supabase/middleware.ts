@@ -60,10 +60,7 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/registration") &&
     !request.nextUrl.pathname.startsWith("/admin/admin-login") &&
     !request.nextUrl.pathname.startsWith("/doctor/doctor-login") &&
-    !request.nextUrl.pathname.startsWith("/doctor/doctor-dashboard") &&
     !request.nextUrl.pathname.startsWith("/doctor/doctor-registration") &&
-    !request.nextUrl.pathname.startsWith("/doctor/patient-list-view") &&
-    !request.nextUrl.pathname.startsWith("/admin/create-channel") &&
     !request.nextUrl.pathname.startsWith("/emergency-manager-login") &&
     !request.nextUrl.pathname.startsWith("/ambulance-login")
   ) {
