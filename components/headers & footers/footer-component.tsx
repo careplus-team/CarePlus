@@ -112,9 +112,9 @@ const FooterComponent = () => {
               <li className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-blue-500 shrink-0" />
                 <span>
-                  123 Health Avenue, Digital City,
+                  123 , Careplus Home ,
                   <br />
-                  Tech State 10001
+                  Colombo , Sri Lanka
                 </span>
               </li>
               <li className="flex items-center gap-3">

@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/form";
 import { SupabaseAuthClient } from "@supabase/supabase-js/dist/module/lib/SupabaseAuthClient";
 import { createClient } from "@/lib/supabase/client";
+import axios from "axios";
 
 const LoginComponent = () => {
   // Create Supabase client
@@ -62,6 +63,7 @@ const LoginComponent = () => {
             onClick: () => window.location.reload(),
           },
         });
+        return;
       } else if (data.user == null) {
         toast("Check Your Email To Verify", {
           description:
@@ -71,6 +73,7 @@ const LoginComponent = () => {
             onClick: () => window.open("https://mail.google.com", "_blank"),
           },
         });
+        return;
       } else if (error) {
         toast("Login Failed", {
           description: "An error occurred while logging in. Please try again.",
@@ -79,10 +82,23 @@ const LoginComponent = () => {
             onClick: () => window.location.reload(),
           },
         });
+        return;
       }
 
-      //redirect user to home page
-      router.push("/home");
+      // Check if user exists in user table
+      const res = await axios.post("/api/get-user-by-email-api", {
+        email: userEmail,
+      });
+
+      const userData = await res.data;
+
+      if (userData.success) {
+        //redirect user to home page
+        router.push("/home");
+      } else {
+        //redirect to doctor dashboard if not in user table
+        router.push("/doctor/doctor-dashboard");
+      }
     });
   };
   //handle the form submission

@@ -5,6 +5,7 @@ import "../../globals.css";
 
 import { Toaster } from "sonner";
 import DoctorSecurity from "@/lib/security-walls/doctor-security";
+import DoctorNavbar from "@/lib/UI-helpers/navbars/doctor-navbar";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -29,7 +30,10 @@ export default function RootLayout({
 }>) {
   return (
     <DoctorSecurity>
-      {children}
+      <div className="min-h-screen bg-slate-50">
+        <DoctorNavbar />
+        <main>{children}</main>
+      </div>
       <Toaster position="top-center" />
     </DoctorSecurity>
   );

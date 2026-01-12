@@ -20,6 +20,8 @@ interface DashboardNavbarProps {
   brandIcon?: React.ReactNode;
   /** Optional specific name for the current dashboard view (e.g., "Doctor Portal") */
   dashboardName?: string;
+  /** Optional home URL for the brand link */
+  homeUrl?: string;
   /** The buttons or user profile components to display */
   children?: React.ReactNode;
   /** Custom styles */
@@ -30,6 +32,7 @@ export function DashboardNavbar({
   brandName = "Care Plus",
   brandIcon,
   dashboardName,
+  homeUrl,
   children,
   className,
 }: DashboardNavbarProps) {
@@ -107,7 +110,10 @@ export function DashboardNavbar({
 
             {/* Brand Section */}
             <Link
-              href={`${brandName == "CarePlus Admin" ? "/admin" : "/home"}`}
+              href={
+                homeUrl ||
+                `${brandName == "CarePlus Admin" ? "/admin" : "/home"}`
+              }
               className="flex items-center gap-2"
             >
               {brandIcon && <span className="text-primary">{brandIcon}</span>}
