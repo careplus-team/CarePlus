@@ -7,8 +7,9 @@ import { LoginSchema } from "@/lib/zod-schema/login.schema";
 import { email, input, z } from "zod";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Eye, EyeOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +27,7 @@ import { createClient } from "@/lib/supabase/client";
 const LoginComponent = () => {
   // Create Supabase client
   const client = createClient();
+  const [showPassword, setShowPassword] = useState(false);
   // Check if user is already signed in
   const checkAlreadySignedIn = async () => {
     startTransition(async () => {
@@ -152,13 +154,26 @@ const LoginComponent = () => {
                           Password
                         </FormLabel>
                         <FormControl>
-                          <input
-                            className="p-2 rounded-md bg-white text-black w-72"
-                            type="password"
-                            {...field}
-                            placeholder="********"
-                            disabled={isPending}
-                          />
+                          <div className="relative w-72">
+                            <input
+                              className="p-2 rounded-md bg-white text-black w-full pr-10"
+                              type={showPassword ? "text" : "password"}
+                              {...field}
+                              placeholder="********"
+                              disabled={isPending}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-2 top-2 text-gray-500 hover:text-gray-700"
+                            >
+                              {showPassword ? (
+                                <EyeOff className="h-5 w-5" />
+                              ) : (
+                                <Eye className="h-5 w-5" />
+                              )}
+                            </button>
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>

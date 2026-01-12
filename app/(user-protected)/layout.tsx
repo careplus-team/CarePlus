@@ -11,6 +11,7 @@ import { Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import UserNavbar from "@/lib/UI-helpers/navbars/user-navbar";
+import FooterComponent from "@/components/headers & footers/footer-component";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -38,6 +39,7 @@ export default function UserProtectedLayout({
     <UserSecurity>
       <UserNavbar />
       {children}
+      <FooterComponent />
       <Toaster position="top-center" />
     </UserSecurity>
   );
