@@ -48,7 +48,7 @@ const SignUpComponent = () => {
       password: "",
       confirmPassword: "",
       age: undefined,
-      gender: undefined,
+      gender: "",
       username: "",
       dateofbirth: "",
       mobilenumber: "",
@@ -108,6 +108,7 @@ const SignUpComponent = () => {
           profilePicture: data.profilePicture,
         });
         console.log("User data saved:", savedUserData);
+        form.reset();
 
         if (savedUserData.status === 409) {
           //this error occure when user who already sign-up and not verified his email try to resign-up
@@ -379,7 +380,10 @@ const SignUpComponent = () => {
                           <FormControl>
                             <select
                               disabled={isPending}
-                              {...field}
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                              onBlur={field.onBlur}
+                              ref={field.ref}
                               className="w-full py-3 px-4 rounded-xl bg-[#F1F5F9] border border-[#E0E0E0] focus:outline-none focus:ring-2 focus:ring-[#00B4D8] transition"
                             >
                               <option value="" disabled>
@@ -390,6 +394,7 @@ const SignUpComponent = () => {
                               <option value="other">Other</option>
                             </select>
                           </FormControl>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
