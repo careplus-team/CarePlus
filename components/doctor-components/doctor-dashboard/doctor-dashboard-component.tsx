@@ -807,7 +807,7 @@ const DoctorDashboard = () => {
                               <button
                                 onClick={() =>
                                   router.push(
-                                    `/doctor/patient-list-view?channelId=${selected.id}`
+                                    `/doctor/PatientList-show?channelId=${selected.id}`
                                   )
                                 }
                                 className="flex w-full items-center justify-center space-x-2 px-4 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700"
