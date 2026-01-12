@@ -48,7 +48,7 @@ const SignUpComponent = () => {
       password: "",
       confirmPassword: "",
       age: undefined,
-      gender: "",
+      gender: undefined,
       username: "",
       dateofbirth: "",
       mobilenumber: "",
