@@ -72,7 +72,9 @@ const AdminLoginComponent = () => {
     startTransition(async () => {
       try {
         // Verify user's role via server API before attempting sign-in
-        const resp = await axios.post("/api/check-admin", { email: values.email });
+        const resp = await axios.post("/api/check-admin", {
+          email: values.email,
+        });
         if (!resp?.data?.isAdmin) {
           toast.error("Unauthorized", {
             description:
@@ -140,8 +142,8 @@ const AdminLoginComponent = () => {
                   </span>
                 </h2>
                 <p className="text-lg text-gray-600 leading-relaxed">
-                  Access your administrative dashboard to manage patient care,
-                  monitor system health, and ensure optimal healthcare delivery.
+                  Access your administrative dashboard to manage patient care
+                  and ensure optimal healthcare delivery.
                 </p>
               </div>
             </div>
