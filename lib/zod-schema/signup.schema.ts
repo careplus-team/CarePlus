@@ -20,7 +20,9 @@ export const SignUpSchema = z
       .min(6, "Confirm Password must be at least 6 characters long")
       .max(100, "Confirm Password must be at most 100 characters long"),
     age: z.number().min(0, "Age must be a positive number").optional(),
-    gender: z.enum(["male", "female", "other"]).optional(),
+    gender: z.enum(["male", "female", "other"], {
+      errorMap: () => ({ message: "Gender is required" }),
+    }),
     username: z
       .string()
       .min(1, "Username is required")
