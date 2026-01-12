@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
-import AdminNavbar from "@/components/admin-components/admin-navbar";
+import AdminNavbar from "@/lib/UI-helpers/navbars/admin-navbar";
 import UserNavbar from "@/lib/UI-helpers/navbars/user-navbar";
 import AmbulanceNavbar from "@/lib/UI-helpers/navbars/ambulance-navbar";
 import EmergencyManagerNavbar from "@/lib/UI-helpers/navbars/emergency-manager-navbar";
