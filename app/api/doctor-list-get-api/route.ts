@@ -4,7 +4,7 @@ import { NextResponse, NextRequest } from "next/server";
 export async function POST(req: NextRequest) {
   try {
     const requestData = await req.json();
-    console.log("Request Data:", requestData);
+    // console.log("Request Data:", requestData);
 
     //API to fetch list of doctors who offer OPD services
     //Request Body Must contain { "command": "OPD" } to trigger this condition
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
         .select("*")
         .eq("OPD", true)
         .eq("verification", true);
-      console.log(doctorList);
+      // console.log(doctorList);
 
       if (doctorList.error) {
         return NextResponse.json({
@@ -31,13 +31,53 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Create API to fetch the list of doctors
+    // Check for "type" to filter by verification status
+    if (requestData.type === "pending") {
+      const doctorList = await supabaseServer
+        .from("doctor")
+        .select("*")
+        .eq("verification", false);
+      
+      if (doctorList.error) {
+        return NextResponse.json({
+          data: null,
+          success: false,
+          message: doctorList.error.message,
+        });
+      }
+      return NextResponse.json({
+        data: doctorList.data,
+        success: true,
+        message: "Pending doctor list fetched successfully",
+      });
+    }
 
+    if (requestData.type === "approved") {
+      const doctorList = await supabaseServer
+        .from("doctor")
+        .select("*")
+        .eq("verification", true);
+      
+      if (doctorList.error) {
+        return NextResponse.json({
+          data: null,
+          success: false,
+          message: doctorList.error.message,
+        });
+      }
+      return NextResponse.json({
+        data: doctorList.data,
+        success: true,
+        message: "Approved doctor list fetched successfully",
+      });
+    }
+
+    // Default: Fetch all verified doctors (backward compatibility or default behavior)
     const doctorList = await supabaseServer
       .from("doctor")
       .select("*")
       .eq("verification", true);
-    console.log(doctorList);
+    // console.log(doctorList);
     if (doctorList.error) {
       return NextResponse.json({
         data: null,
