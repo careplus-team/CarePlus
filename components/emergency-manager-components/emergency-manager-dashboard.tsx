@@ -879,99 +879,105 @@ const EmergencyManagerDashboard = () => {
           </div>
 
           {/* Quick Actions */}
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-5 sticky top-6">
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-5 sticky top-6">
             <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
               <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-500 text-xs">
-              ⚡
+                ⚡
               </span>
               Quick Actions
             </h4>
             <div className="flex flex-col gap-3">
-              <Link href="/emergency-manager/all-ambulance" className="w-full group">
-              <Button
-                variant="outline"
-                className="w-full justify-start h-auto py-3 px-4 border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 hover:text-blue-700 transition-all duration-200 shadow-sm hover:shadow"
+              <Link
+                href="/emergency-manager/all-ambulance"
+                className="w-full group"
               >
-                <div className="p-2 rounded-md bg-blue-100 text-blue-600 mr-3 group-hover:scale-110 transition-transform">
-                <Ambulance className="h-4 w-4" />
-                </div>
-                <div className="text-left">
-                <div className="font-semibold leading-none mb-1">
-                  All Ambulances
-                </div>
-                <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
-                  View Fleet
-                </div>
-                </div>
-              </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start h-auto py-3 px-4 border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 hover:text-blue-700 transition-all duration-200 shadow-sm hover:shadow"
+                >
+                  <div className="p-2 rounded-md bg-blue-100 text-blue-600 mr-3 group-hover:scale-110 transition-transform">
+                    <Ambulance className="h-4 w-4" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-semibold leading-none mb-1">
+                      All Ambulances
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
+                      View Fleet
+                    </div>
+                  </div>
+                </Button>
               </Link>
 
               <Link
-              href="/emergency-manager/ambulance-manage"
-              className="w-full group"
+                href="/emergency-manager/ambulance-manage"
+                className="w-full group"
               >
-              <Button
-                variant="outline"
-                className="w-full justify-start h-auto py-3 px-4 border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50 hover:text-indigo-700 transition-all duration-200 shadow-sm hover:shadow"
-              >
-                <div className="p-2 rounded-md bg-indigo-100 text-indigo-600 mr-3 group-hover:scale-110 transition-transform">
-                <List className="h-4 w-4" />
-                </div>
-                <div className="text-left">
-                <div className="font-semibold leading-none mb-1">
-                  Manage Fleet
-                </div>
-                <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
-                  Edit details
-                </div>
-                </div>
-              </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start h-auto py-3 px-4 border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50 hover:text-indigo-700 transition-all duration-200 shadow-sm hover:shadow"
+                >
+                  <div className="p-2 rounded-md bg-indigo-100 text-indigo-600 mr-3 group-hover:scale-110 transition-transform">
+                    <List className="h-4 w-4" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-semibold leading-none mb-1">
+                      Manage Fleet
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
+                      Edit details
+                    </div>
+                  </div>
+                </Button>
               </Link>
 
               <div className="h-px bg-slate-100 my-1"></div>
 
               <Link
-              href="/emergency-manager/ambulance-registration"
-              className="w-full group"
+                href="/emergency-manager/ambulance-registration"
+                className="w-full group"
               >
-              <Button
-                variant="outline"
-                className="w-full justify-start h-auto py-3 px-4 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/50 hover:text-emerald-700 transition-all duration-200 shadow-sm hover:shadow"
-              >
-                <div className="p-2 rounded-md bg-emerald-100 text-emerald-600 mr-3 group-hover:scale-110 transition-transform">
-                <PlusCircle className="h-4 w-4" />
-                </div>
-                <div className="text-left">
-                <div className="font-semibold leading-none mb-1">
-                  Register Ambulance
-                </div>
-                <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
-                  Add New
-                </div>
-                </div>
-              </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start h-auto py-3 px-4 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/50 hover:text-emerald-700 transition-all duration-200 shadow-sm hover:shadow"
+                >
+                  <div className="p-2 rounded-md bg-emerald-100 text-emerald-600 mr-3 group-hover:scale-110 transition-transform">
+                    <PlusCircle className="h-4 w-4" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-semibold leading-none mb-1">
+                      Register Ambulance
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
+                      Add New
+                    </div>
+                  </div>
+                </Button>
               </Link>
 
-              <Link href="/admin/emergency-manager-reg" className="w-full group">
-              <Button
-                variant="outline"
-                className="w-full justify-start h-auto py-3 px-4 border-slate-200 hover:border-purple-300 hover:bg-purple-50/50 hover:text-purple-700 transition-all duration-200 shadow-sm hover:shadow"
+              <Link
+                href="/emergency-manager/ambulance-operator-reg"
+                className="w-full group"
               >
-                <div className="p-2 rounded-md bg-purple-100 text-purple-600 mr-3 group-hover:scale-110 transition-transform">
-                <UserPlus className="h-4 w-4" />
-                </div>
-                <div className="text-left">
-                <div className="font-semibold leading-none mb-1">
-                  New Manager
-                </div>
-                <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
-                  Create Account
-                </div>
-                </div>
-              </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start h-auto py-3 px-4 border-slate-200 hover:border-purple-300 hover:bg-purple-50/50 hover:text-purple-700 transition-all duration-200 shadow-sm hover:shadow"
+                >
+                  <div className="p-2 rounded-md bg-purple-100 text-purple-600 mr-3 group-hover:scale-110 transition-transform">
+                    <UserPlus className="h-4 w-4" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-semibold leading-none mb-1">
+                      New Ambulance Operator
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
+                      Register Account
+                    </div>
+                  </div>
+                </Button>
               </Link>
             </div>
-            </div>
+          </div>
         </aside>
       </div>
 
