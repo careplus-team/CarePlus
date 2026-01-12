@@ -30,29 +30,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.className} antialiased`}>
-        <AdminSecurity>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <div className="flex flex-col min-h-screen">
-               {/* Admin Navbar */}
-               <div className="sticky top-0 z-50">
-                  <AdminNavbar />
-               </div>
-               {/* Main Content */}
-               <main className="flex-1">
-                 {children}
-               </main>
-            </div>
-          </ThemeProvider>
-          <Toaster position="top-center" />
-        </AdminSecurity>
-      </body>
-    </html>
+    <AdminSecurity>
+      <div className="flex flex-col min-h-screen">
+        {/* Admin Navbar */}
+        <div className="sticky top-0 z-50">
+          <AdminNavbar />
+        </div>
+        {/* Main Content */}
+        <main className="flex-1">{children}</main>
+      </div>
+
+      <Toaster position="top-center" />
+    </AdminSecurity>
   );
 }
