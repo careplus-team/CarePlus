@@ -19,6 +19,13 @@ const UserSecurity = ({ children }: { children: ReactNode }) => {
         router.push("/login");
         return;
       } else {
+        const doctorCheckData = await axios.post("/api/check-doctor", {
+          email: currentUserData?.data?.claims?.email,
+        });
+        if (doctorCheckData.data.isDoctor) {
+          router.push("doctor/doctor-dashboard");
+          return;
+        }
         console.log("User is an authenticated user");
         setUserDetails(currentUserData.data);
       }
