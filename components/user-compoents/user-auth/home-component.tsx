@@ -7,7 +7,8 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import axios from "axios";
 import { toast } from "sonner";
-import { CalendarCheck, CalendarCheck2, Users } from "lucide-react";
+import { CalendarCheck, CalendarCheck2, Users, AlertCircle } from "lucide-react";
+import EmergencyRequestModal from "../emergency-request-modal";
 
 const HomeComponent = () => {
   const router = useRouter();
@@ -33,6 +34,7 @@ const HomeComponent = () => {
   const [availableChannelListDoctorData, setAvailableChannelListDoctorData] =
     useState<any[]>([]);
   const [opdDoctorData, setOpdDoctorData] = useState<any>(null);
+  const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
 
   // All useTransition hooks
   const [isPending, startTransition] = useTransition();
@@ -549,9 +551,11 @@ const HomeComponent = () => {
                 Your health journey continues. Here's your personalized
                 dashboard.
               </p>
+        
             </div>
 
             <div className="flex items-center space-x-4">
+             
               <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
                 <Image
                   src={dbUserInfo?.profilePicture || "/temp_user.webp"}
@@ -817,7 +821,7 @@ const HomeComponent = () => {
               </div>
 
               <div className="p-6 space-y-4">
-                <Button className="w-full bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white font-semibold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200">
+                <Button  onClick={() => setIsEmergencyModalOpen(true)} className="w-full bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white font-semibold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200">
                   <svg
                     className="w-5 h-5 mr-2"
                     fill="none"
@@ -1220,21 +1224,38 @@ const HomeComponent = () => {
               </div>
 
               <div className="p-6 space-y-4 flex flex-col justify-center w-full">
-                <Button className="w-full h-[30%] bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white font-semibold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200">
-                  <svg
-                    className="w-5 h-5 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                    />
-                  </svg>
-                  Emergency Call
+                <Button
+                  disabled={isPending}
+                  onClick={() => setIsEmergencyModalOpen(true)}
+                  className={`w-full h-[30%] font-semibold py-4 rounded-xl shadow-lg transition-all duration-200 ${
+                    isPending
+                      ? "bg-slate-300 text-slate-500 cursor-not-allowed"
+                      : "bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white hover:shadow-xl transform hover:scale-[1.02]"
+                  }`}
+                >
+                  {isPending ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-slate-500 mr-2"></div>
+                      Loading...
+                    </div>
+                  ) : (
+                    <>
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                        />
+                      </svg>
+                      Emergency Call
+                    </>
+                  )}
                 </Button>
 
                 <Button
@@ -1376,6 +1397,12 @@ const HomeComponent = () => {
             </div>
           </div>
         </div>
+        {/* Emergency Request Modal */}
+        <EmergencyRequestModal
+          isOpen={isEmergencyModalOpen}
+          onCloseAction={() => setIsEmergencyModalOpen(false)}
+          userEmail={userInfo?.email}
+        />
       </div>
     </div>
   );
