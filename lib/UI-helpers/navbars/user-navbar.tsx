@@ -15,10 +15,7 @@ const UserNavbar = () => {
   const router = useRouter();
 
   return (
-    <DashboardNavbar
-      brandName="Care Plus"
-      brandIcon={<Activity className="h-6 w-6 text-blue-600" />}
-    >
+    <DashboardNavbar brandName="Care Plus">
       {/* These buttons appear on the right on Desktop, and inside the drawer on Mobile */}
       <Button onClick={() => router.push("/my-lab-reports")} variant="ghost">
         <ClipboardMinus /> My Reports

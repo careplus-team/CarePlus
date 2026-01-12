@@ -106,10 +106,13 @@ export function DashboardNavbar({
             </button>
 
             {/* Brand Section */}
-            <Link href={`${brandName == "CarePlus Admin" ? "/admin" : "/home"}`} className="flex items-center gap-2">
+            <Link
+              href={`${brandName == "CarePlus Admin" ? "/admin" : "/home"}`}
+              className="flex items-center gap-2"
+            >
               {brandIcon && <span className="text-primary">{brandIcon}</span>}
               <div className="flex flex-col leading-none">
-                <span className="text-lg font-bold text-gray-900">
+                <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-emerald-500 inline-block">
                   {brandName}
                 </span>
               </div>

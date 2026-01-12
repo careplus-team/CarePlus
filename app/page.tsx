@@ -16,12 +16,108 @@ import {
   ArrowBigDownDashIcon,
   Ticket,
   Timer,
+  LayoutDashboard,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { useEffect, useState } from "react";
+import AdminNavbar from "@/components/admin-components/admin-navbar";
+import UserNavbar from "@/lib/UI-helpers/navbars/user-navbar";
+import AmbulanceNavbar from "@/lib/UI-helpers/navbars/ambulance-navbar";
+import EmergencyManagerNavbar from "@/lib/UI-helpers/navbars/emergency-manager-navbar";
+import { DashboardNavbar } from "@/lib/UI-helpers/navbars/navbar-template";
+import FooterComponent from "@/components/headers & footers/footer-component";
 
 export default function LandingPage() {
-  return (
-    <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-100 text-slate-900">
-      {/* Navigation */}
+  const [role, setRole] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const client = createClient();
+    const checkRole = async () => {
+      try {
+        const {
+          data: { user },
+        } = await client.auth.getUser();
+
+        if (!user) {
+          setIsLoading(false);
+          return;
+        }
+
+        // Check user table
+        const { data: userData } = await client
+          .from("user")
+          .select("role")
+          .eq("email", user.email)
+          .single();
+
+        if (userData) {
+          setRole(userData.role);
+          setIsLoading(false);
+          return;
+        }
+
+        // Check doctor table
+        const { data: doctorData } = await client
+          .from("doctor")
+          .select("*")
+          .eq("email", user.email)
+          .single();
+
+        if (doctorData) {
+          setRole("doctor");
+          setIsLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.error("Error checking role:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkRole();
+  }, []);
+
+  const renderNavbar = () => {
+    if (isLoading) {
+      return (
+        <nav className="fixed top-0 w-full z-50 border-b border-slate-200/60 bg-white/80 backdrop-blur-md">
+          <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className=" absolute top-4  ">
+                <p className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500  to-green-500 font-bold  text-2xl">
+                  CarePlus
+                </p>
+              </div>
+            </div>
+          </div>
+        </nav>
+      );
+    }
+
+    if (role === "admin") return <AdminNavbar />;
+    if (role === "ambulance_operator") return <AmbulanceNavbar />;
+    if (role === "emergency_manager") return <EmergencyManagerNavbar />;
+    if (role === "user") return <UserNavbar />;
+    if (role === "doctor") {
+      return (
+        <DashboardNavbar
+          brandName="Care Plus"
+          brandIcon={<Activity className="h-6 w-6 text-blue-600" />}
+          dashboardName="Doctor Portal"
+        >
+          <Link href="/doctor/doctor-dashboard">
+            <Button variant="ghost" className="gap-2">
+              <LayoutDashboard size={16} />
+              Dashboard
+            </Button>
+          </Link>
+        </DashboardNavbar>
+      );
+    }
+
+    // Default Not Logged In Navbar
+    return (
       <nav className="fixed top-0 w-full z-50 border-b border-slate-200/60 bg-white/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -48,6 +144,13 @@ export default function LandingPage() {
           </div>
         </div>
       </nav>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-100 text-slate-900">
+      {/* Navigation */}
+      {renderNavbar()}
 
       {/* Hero Section */}
       <section className=" h-screen lg:px-20 flex flex-col justify-center items-center pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
@@ -304,29 +407,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 py-12 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2">
-            <span className="text-slate-900 font-bold text-lg">
-              CarePlus - Digital Health Care Platform
-            </span>
-          </div>
-          <div className="text-slate-500 text-sm">
-            2025 CarePlus Inc. All rights reserved.
-          </div>
-          <div className="flex gap-6 text-slate-500 font-medium">
-            <a href="#" className="hover:text-blue-600 transition-colors">
-              Privacy
-            </a>
-            <a href="#" className="hover:text-blue-600 transition-colors">
-              Terms
-            </a>
-            <a href="#" className="hover:text-blue-600 transition-colors">
-              Contact
-            </a>
-          </div>
-        </div>
-      </footer>
+      <FooterComponent />
     </div>
   );
 }
