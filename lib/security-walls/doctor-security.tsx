@@ -5,6 +5,8 @@ import { fetchUserInfoFromAuth } from "../client-actions/current-user";
 import { useRouter } from "next/navigation";
 import Doctor from "@/app/doctor/(doctor-protected)/doctor-dashboard/page";
 
+import { DoctorProvider } from "@/lib/context/doctor-context";
+
 const DoctorSecurity = ({ children }: { children: ReactNode }) => {
   const [isPending, startTransition] = useTransition();
   const [doctorDetails, setDoctorDetails] = useState<any>(null);
@@ -36,7 +38,9 @@ const DoctorSecurity = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <div>
+    <DoctorProvider
+      value={{ doctorDetails, isLoading: isPending || doctorDetails === null }}
+    >
       {isPending || doctorDetails === null ? (
         <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
           <div className="bg-transparent rounded-lg  p-8 max-w-sm w-full text-center">
@@ -71,7 +75,7 @@ const DoctorSecurity = ({ children }: { children: ReactNode }) => {
       ) : (
         children
       )}
-    </div>
+    </DoctorProvider>
   );
 };
 
