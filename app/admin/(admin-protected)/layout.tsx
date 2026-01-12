@@ -6,7 +6,7 @@ import "../../globals.css";
 import { Toaster } from "sonner";
 
 import AdminSecurity from "@/lib/security-walls/admin-security";
-import AdminNavbar from "@/components/admin-components/admin-navbar";
+import AdminNavbar from "@/lib/UI-helpers/navbars/admin-navbar";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`

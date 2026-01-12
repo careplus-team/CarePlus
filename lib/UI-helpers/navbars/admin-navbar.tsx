@@ -16,7 +16,6 @@ export default function AdminNavbar() {
   return (
     <DashboardNavbar
       brandName="CarePlus Admin"
-      brandIcon={<Activity className="h-6 w-6" />}
       dashboardName="Administrator Control Panel"
     >
       <div className="flex items-center gap-2">
