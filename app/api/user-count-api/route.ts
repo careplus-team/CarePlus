@@ -16,6 +16,11 @@ export async function GET(req: NextRequest) {
       .from("doctor")
       .select("*", { count: "exact", head: true });
 
+    const noOfApprovedDoctors = await supabaseServer
+      .from("doctor")
+      .select("*", { count: "exact", head: true })
+      .eq("verification", true);
+
     const noOfEmergencyManagers = await supabaseServer
       .from("user")
       .select("*", { count: "exact", head: true })
@@ -30,6 +35,7 @@ export async function GET(req: NextRequest) {
       noOfUsers: noOfUsers.count,
       noOfAdmins: noOfAdmins.count,
       noOfDoctors: noOfDoctors.count,
+      noOfApprovedDoctors: noOfApprovedDoctors.count,
       noOfEmergencyManagers: noOfEmergencyManagers.count,
       noOfAmbulanceOperators: noOfAmbulanceOperators.count,
       success: true,
@@ -40,6 +46,7 @@ export async function GET(req: NextRequest) {
       noOfUsers: 0,
       noOfAdmins: 0,
       noOfDoctors: 0,
+      noOfApprovedDoctors: 0,
       success: false,
       message: "An error occurred while fetching user counts",
     });

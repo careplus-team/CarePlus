@@ -1,19 +1,29 @@
 import { supabaseServer } from "@/lib/supabase/admin";
 import { NextResponse, NextRequest } from "next/server";
 
-// Create POST API to get doctor details by email
+// Create POST API to get doctor details by email or id
 export async function POST(req: NextRequest) {
   try {
-    // Get the email from the request body
-    const { email } = await req.json();
-    // Fetch the doctor details from the "doctor" table using the provided email
-    const doctorData = await supabaseServer
-      .from("doctor")
-      .select("*")
-      .eq("email", email)
-      .single();
+    // Get the email or id from the request body
+    const { email, id } = await req.json();
+    
+    let query = supabaseServer.from("doctor").select("*");
 
-    console.log(doctorData);
+    if (id) {
+       query = query.eq("id", id);
+    } else if (email) {
+       query = query.eq("email", email);
+    } else {
+        return NextResponse.json({
+            data: null,
+            success: false,
+            message: "Email or ID is required",
+        }, { status: 400 });
+    }
+
+    const doctorData = await query.single();
+
+    // console.log(doctorData);
     // Check for errors
     if (doctorData.error) {
       return NextResponse.json({
