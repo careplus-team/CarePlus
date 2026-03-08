@@ -26,7 +26,7 @@ import { useRouter } from "next/navigation";
 
 export default function AdminDashboardComp() {
   const [hasActiveSession, setHasActiveSession] = useState<boolean | null>(
-    null
+    null,
   );
   const [showOpd, setShowOpd] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -93,7 +93,7 @@ export default function AdminDashboardComp() {
           } else if (payload.eventType === "DELETE") {
             setHasActiveSession(false);
           }
-        }
+        },
       )
       .subscribe();
 
@@ -252,12 +252,7 @@ export default function AdminDashboardComp() {
                 href="/admin/manage-admins"
                 colorClass="bg-purple-600"
               />
-              <QuickAccessCard
-                title="Operator Reg"
-                icon={UserPlus}
-                href="/admin/ambulance-operator-reg"
-                colorClass="bg-orange-600"
-              />
+
               <QuickAccessCard
                 title="Emergency Mgr"
                 icon={ShieldAlert}
