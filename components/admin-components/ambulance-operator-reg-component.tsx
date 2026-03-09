@@ -8,6 +8,14 @@ import { toast } from "sonner";
 import { Card } from "../ui/card";
 import { Input } from "../ui/input";
 
+interface AmbulanceOption {
+  id: string;
+  license_plate: string;
+  make: string;
+  model: string;
+  assigned_operator_email: string | null;
+}
+
 const AmbulanceOperatorComponent = () => {
   const [addEmail, setAddEmail] = useState("");
   const [removeEmail, setRemoveEmail] = useState("");
@@ -15,6 +23,9 @@ const AmbulanceOperatorComponent = () => {
   const [showSuccess, setShowSuccess] = useState(false);
 
   const [noOfAmbulanceOperators, setNoOfAmbulanceOperators] = useState(0);
+  // Ambulance list for optional assignment
+  const [ambulances, setAmbulances] = useState<AmbulanceOption[]>([]);
+  const [selectedAmbulanceId, setSelectedAmbulanceId] = useState("");
   //set pending status of number of users and ambulance operators
   const [isPending, startTransition] = useTransition();
   //set pending status of API data fetching process
@@ -40,7 +51,7 @@ const AmbulanceOperatorComponent = () => {
     startTransitionProcess(async () => {
       const promotedAmbulanceOperator = await axios.post(
         "/api/ambulance-operator-registration-api",
-        { email: addEmail }
+        { email: addEmail, ambulanceId: selectedAmbulanceId || undefined },
       );
       if (promotedAmbulanceOperator.data.success) {
         setShowSuccess(true);
@@ -53,6 +64,7 @@ const AmbulanceOperatorComponent = () => {
   const handleCloseSuccess = () => {
     setShowSuccess(false);
     setAddEmail("");
+    setSelectedAmbulanceId("");
     setRemoveDisabled(false);
     setAddDisabled(false);
   };
@@ -71,7 +83,7 @@ const AmbulanceOperatorComponent = () => {
         "/api/ambulance-operator-remove-api",
         {
           email: removeEmail,
-        }
+        },
       );
       if (removeAmbulanceOperatorData.data.success) {
         setShowRemoveSuccess(true);
@@ -96,6 +108,15 @@ const AmbulanceOperatorComponent = () => {
       setNoOfAmbulanceOperators(count.data.noOfAmbulanceOperators || 0);
     });
   }, [showRemoveSuccess, showSuccess, showRemoveSuccess]);
+
+  // Fetch all ambulances for the optional assignment dropdown
+  useEffect(() => {
+    axios.get("/api/all-ambulance-get-api").then((res) => {
+      if (res.data.success) {
+        setAmbulances(res.data.data);
+      }
+    });
+  }, [showSuccess]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -279,6 +300,43 @@ const AmbulanceOperatorComponent = () => {
                   />
                   <p className="text-xs text-gray-500">
                     Enter the exact email address of the user to be promoted
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="ambulance"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Assign Ambulance{" "}
+                    <span className="text-gray-400 font-normal">
+                      (Optional)
+                    </span>
+                  </Label>
+                  <select
+                    id="ambulance"
+                    value={selectedAmbulanceId}
+                    onChange={(e) => setSelectedAmbulanceId(e.target.value)}
+                    disabled={addDisabled}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                  >
+                    <option value="">— No ambulance assigned —</option>
+                    {ambulances.map((amb) => (
+                      <option
+                        key={amb.id}
+                        value={amb.id}
+                        disabled={!!amb.assigned_operator_email}
+                      >
+                        {amb.license_plate} — {amb.make} {amb.model}
+                        {amb.assigned_operator_email
+                          ? ` (assigned to ${amb.assigned_operator_email})`
+                          : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500">
+                    You can assign an ambulance now or do it later from Fleet
+                    Management
                   </p>
                 </div>
 
@@ -471,6 +529,18 @@ const AmbulanceOperatorComponent = () => {
                 <li>• Track Patient Location</li>
                 <li>• Review Request Details</li>
               </ul>
+              {selectedAmbulanceId && (
+                <p className="text-sm text-indigo-700 bg-indigo-50 rounded p-2">
+                  Ambulance{" "}
+                  <strong>
+                    {
+                      ambulances.find((a) => a.id === selectedAmbulanceId)
+                        ?.license_plate
+                    }
+                  </strong>{" "}
+                  will be assigned to this operator.
+                </p>
+              )}
               <p className="text-gray-600 text-sm">
                 This action cannot be undone. Are you sure you want to proceed?
               </p>
@@ -577,6 +647,19 @@ const AmbulanceOperatorComponent = () => {
                 User{" "}
                 <span className="font-medium text-gray-900">{addEmail}</span>{" "}
                 has been successfully promoted to ambulance operator.
+                {selectedAmbulanceId && (
+                  <>
+                    {" "}
+                    Assigned to ambulance{" "}
+                    <span className="font-medium text-gray-900">
+                      {
+                        ambulances.find((a) => a.id === selectedAmbulanceId)
+                          ?.license_plate
+                      }
+                    </span>
+                    .
+                  </>
+                )}
               </p>
               <Button
                 onClick={handleCloseSuccess}

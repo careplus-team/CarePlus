@@ -1,7 +1,6 @@
 import { supabaseServer } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 
-
 export async function GET() {
   try {
     // 1. Fetch all ambulances
@@ -13,7 +12,7 @@ export async function GET() {
     if (ambError) {
       return NextResponse.json(
         { success: false, message: ambError.message },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -21,37 +20,51 @@ export async function GET() {
     // We assume 'status' column exists and we exclude completed/cancelled ones.
     const ambulanceIds = ambulances.map((a) => a.id);
     let requests: any[] = [];
-    
+
     if (ambulanceIds.length > 0) {
-        // Use exact columns from screenshot: latitude, longitude, ambulanceId (camelCase), status
-        const { data: reqData, error: reqError } = await supabaseServer
+      // Use exact columns from screenshot: latitude, longitude, ambulanceId (camelCase), status
+      const { data: reqData, error: reqError } = await supabaseServer
         .from("emergency_request")
         .select("id, ambulanceId, latitude, longitude, status")
-        // Use implicit filter or manual filter if .in() fails on mixed case column names in some supabase versions, 
+        // Use implicit filter or manual filter if .in() fails on mixed case column names in some supabase versions,
         // but typically it works. We'll stick to standard syntax.
-        .in("ambulanceId", ambulanceIds) 
-        .not("status", "in", "(Completed,Cancelled)"); 
-        
-        if (!reqError && reqData) {
-            requests = reqData;
-        }
+        .in("ambulanceId", ambulanceIds)
+        .not("status", "in", "(Completed,Cancelled)");
+
+      if (!reqError && reqData) {
+        requests = reqData;
+      }
     }
 
-    // 3. Merge data
+    // 3. Fetch assigned operators for these ambulances
+    let assignments: { userEmail: string; ambulanceId: string }[] = [];
+    if (ambulanceIds.length > 0) {
+      const { data: assignData } = await supabaseServer
+        .from("ambulance_operator")
+        .select("userEmail, ambulanceId")
+        .in("ambulanceId", ambulanceIds);
+      if (assignData) assignments = assignData;
+    }
+
+    // 4. Merge data
     const mergedData = ambulances.map((amb) => {
-        // Match using camelCase ambulanceId
-        const activeReq = requests.find((r) => r.ambulanceId === amb.id);
-        return {
-            ...amb,
-            active_request: activeReq ? {
-                id: activeReq.id,
-                // Create a formatted location string or just pass coords. 
-                // We'll pass coords primarily.
-                latitude: activeReq.latitude,
-                longitude: activeReq.longitude,
-                status: activeReq.status
-            } : null
-        };
+      // Match using camelCase ambulanceId
+      const activeReq = requests.find((r) => r.ambulanceId === amb.id);
+      const assignment = assignments.find((a) => a.ambulanceId === amb.id);
+      return {
+        ...amb,
+        active_request: activeReq
+          ? {
+              id: activeReq.id,
+              // Create a formatted location string or just pass coords.
+              // We'll pass coords primarily.
+              latitude: activeReq.latitude,
+              longitude: activeReq.longitude,
+              status: activeReq.status,
+            }
+          : null,
+        assigned_operator_email: assignment?.userEmail || null,
+      };
     });
 
     return NextResponse.json({
@@ -63,7 +76,7 @@ export async function GET() {
     console.error("GET ambulance error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
