@@ -66,7 +66,7 @@ const UserNavbar = () => {
       <Button onClick={() => router.push("/my-lab-reports")} variant="ghost">
         <ClipboardMinus /> My Reports
       </Button>
-      <Button variant="ghost">
+      <Button onClick={() => router.push("/channel-history")} variant="ghost">
         <History />
         Chaneling Historys
       </Button>
