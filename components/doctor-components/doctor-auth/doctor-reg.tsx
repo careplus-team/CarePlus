@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +26,6 @@ import { createClient } from "@/lib/supabase/client";
 
 import {
   UserPlus,
-  Upload,
   Stethoscope,
   MapPin,
   Phone,
@@ -46,7 +46,7 @@ import z from "zod";
 function DoctorRegistrationComponent() {
   const [isPending, startTransition] = useTransition();
   const [profilePicButtonText, setProfilePicButtonText] = useState(
-    "Add Profile Picture"
+    "Add Profile Picture",
   );
   const client = createClient();
   const router = useRouter();
@@ -69,6 +69,7 @@ function DoctorRegistrationComponent() {
     alreadyLoggedInUserActionHandle();
   }, []);
   const form = useForm<z.infer<typeof doctorRegistrationSchema>>({
+    resolver: zodResolver(doctorRegistrationSchema),
     defaultValues: {
       name: "",
       email: "",
@@ -89,83 +90,73 @@ function DoctorRegistrationComponent() {
   const [profilePic, setProfilePic] = useState("/temp_user.webp");
 
   const registerUserFunction = (
-    data: z.infer<typeof doctorRegistrationSchema>
+    data: z.infer<typeof doctorRegistrationSchema>,
   ) => {
     console.log("Register user function called with data:", data);
 
     startTransition(async () => {
       console.log("Registering user with data:", data);
       const client = createClient();
-      const userData = await client.auth.signUp({
+      const { data: authData, error: authError } = await client.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
           emailRedirectTo: `${window.location.origin}/confirm?next=/doctor/doctor-dashboard`,
         },
       });
-      console.log("User registered:", userData);
-      if (!userData.data.user?.user_metadata.email) {
-        //get error when already signed-up user (email verified one) try to signup again
+      console.log("User registered:", authData);
 
-        toast("Already Exist User", {
-          description: "You are already registered . Please login.",
+      if (authError) {
+        toast.error("Registration failed", {
+          description: authError.message,
+        });
+        return;
+      }
+
+      if (!authData.user?.id) {
+        toast.error("Registration failed", {
+          description: "Could not create account. Please try again.",
+        });
+        return;
+      }
+
+      const registeredDoctorData = await axios.post(
+        "/api/register-doctor-api",
+        data,
+      );
+      console.log("User data saved:", registeredDoctorData);
+
+      if (
+        registeredDoctorData.data.message ===
+        "Doctor with this email already exists"
+      ) {
+        // This happens when the user signed up earlier and is waiting for email verification.
+        toast("Check Your Email To Verify", {
+          description:
+            "You are already registered. Please check your email to verify.",
           action: {
-            label: "Login",
-            onClick: () => router.push("/doctor/doctor-login"),
+            label: "Open Email",
+            onClick: () => window.open("https://mail.google.com", "_blank"),
           },
         });
         return;
       }
 
-      if (userData.data.user?.id) {
-        // Calculate age from dateofbirth
-        let age = undefined;
-        if (data.dateOfBirth) {
-          const dob = new Date(data.dateOfBirth);
-          const today = new Date();
-          age = today.getFullYear() - dob.getFullYear();
-          const m = today.getMonth() - dob.getMonth();
-          if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
-            age--;
-          }
-        }
+      toast("Registration Successful", {
+        description: "Please Check Your Email to Verify.",
+        action: {
+          label: "Open Email",
+          onClick: () => window.open("https://mail.google.com", "_blank"),
+        },
+      });
 
-        const registeredDoctorData = await axios.post(
-          "/api/register-doctor-api",
-          data
-        );
-        console.log("User data saved:", registeredDoctorData);
+      setProfilePic("/temp_user.webp");
+      form.reset();
 
-        if (
-          registeredDoctorData.data.message ===
-          "Doctor with this email already exists"
-        ) {
-          //this error occure when user who already sign-up and not verified his email try to resign-up
-          toast("Check Your Email To Verify", {
-            description:
-              "You are already registered. Please check your email to verify.",
-            action: {
-              label: "Open Email",
-              onClick: () => window.open("https://mail.google.com", "_blank"),
-            },
-          });
-          return;
-        } else {
-          toast("Registration Successful", {
-            description: "Please Check Your Email to Verify.",
-            action: {
-              label: "Open Email",
-              onClick: () => window.open("https://mail.google.com", "_blank"),
-            },
-          });
-          setTimeout(() => {
-            router.push("doctor/doctor-login");
-          }, 5000);
-        }
-      }
+      setTimeout(() => {
+        router.push("/doctor/doctor-login");
+      }, 5000);
     });
-    setProfilePic("/temp_user.webp");
-    form.reset();
   };
 
   return (
@@ -237,9 +228,9 @@ function DoctorRegistrationComponent() {
                       result.info !== null &&
                       "secure_url" in result.info
                       ? String(
-                          (result.info as { secure_url?: string }).secure_url
+                          (result.info as { secure_url?: string }).secure_url,
                         )
-                      : ""
+                      : "",
                   );
                   if (result.event === "success") {
                     form.setValue(
@@ -249,7 +240,7 @@ function DoctorRegistrationComponent() {
                         "secure_url" in result.info
                         ? (result.info as { secure_url?: string }).secure_url ||
                             ""
-                        : ""
+                        : "",
                     );
                   }
                   console.log(form.getValues());
@@ -396,7 +387,7 @@ function DoctorRegistrationComponent() {
                         <Select
                           disabled={isPending}
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                         >
                           <FormControl>
                             <SelectTrigger className="h-12 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500">
@@ -404,9 +395,9 @@ function DoctorRegistrationComponent() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Male">Male</SelectItem>
-                            <SelectItem value="Female">Female</SelectItem>
-                            <SelectItem value="Other">Other</SelectItem>
+                            <SelectItem value="male">Male</SelectItem>
+                            <SelectItem value="female">Female</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
