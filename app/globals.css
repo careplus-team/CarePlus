@@ -95,4 +95,9 @@
   .scrollbar-mobile:hover::-webkit-scrollbar-thumb {
     background-color: #9ca3af; /* gray-400 on hover */
   }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: brightness(0); /* makes icon black */
+  cursor: pointer;
+}
 }
