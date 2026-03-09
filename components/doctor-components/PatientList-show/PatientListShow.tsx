@@ -50,7 +50,7 @@ export default function PatientListShow() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [patientDetails, setPatientDetails] = useState<PatientDetails | null>(
-    null
+    null,
   );
   const [detailsLoading, setDetailsLoading] = useState(false);
 
@@ -150,7 +150,7 @@ export default function PatientListShow() {
         <div
           className={cn(
             "lg:col-span-5 h-full flex flex-col gap-4",
-            selectedId && "hidden lg:flex" // Hide on mobile if selected
+            selectedId && "hidden lg:flex", // Hide on mobile if selected
           )}
         >
           <Card className="h-full border-slate-200 shadow-sm flex flex-col overflow-hidden bg-white/80 backdrop-blur-sm">
@@ -184,7 +184,7 @@ export default function PatientListShow() {
         <div
           className={cn(
             "lg:col-span-7 h-full",
-            !selectedId && "hidden lg:flex" // Hide on mobile if NO selection, but show generic placeholder on desktop
+            !selectedId && "hidden lg:flex", // Hide on mobile if NO selection, but show generic placeholder on desktop
           )}
         >
           <Card className="h-full border-slate-200 shadow-sm flex flex-col overflow-hidden bg-white">
@@ -327,16 +327,6 @@ export default function PatientListShow() {
                           </div>
                         </section>
                       )}
-
-                      {/* Action Buttons */}
-                      <div className="pt-4 flex gap-3">
-                        <Button className="flex-1 bg-blue-600 hover:bg-blue-700">
-                          Start Consultation
-                        </Button>
-                        <Button variant="outline" className="flex-1">
-                          View Medical History
-                        </Button>
-                      </div>
                     </div>
                   )}
                 </div>
@@ -388,7 +378,7 @@ function PatientListItem({
         "group relative p-4 rounded-xl border cursor-pointer transition-all duration-200 ease-in-out hover:shadow-md",
         isSelected
           ? "bg-blue-50/50 border-blue-500/50 shadow-sm ring-1 ring-blue-500/20"
-          : "bg-white border-slate-200 hover:border-blue-300 hover:bg-slate-50"
+          : "bg-white border-slate-200 hover:border-blue-300 hover:bg-slate-50",
       )}
     >
       <div className="flex justify-between items-start mb-2">
@@ -399,7 +389,7 @@ function PatientListItem({
                 "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-sm transition-colors overflow-hidden",
                 isSelected
                   ? "bg-blue-600 text-white"
-                  : "bg-slate-100 text-slate-600 group-hover:bg-blue-100 group-hover:text-blue-700"
+                  : "bg-slate-100 text-slate-600 group-hover:bg-blue-100 group-hover:text-blue-700",
               )}
             >
               {loading ? (
@@ -464,7 +454,7 @@ function InfoCard({
     <div
       className={cn(
         "p-4 rounded-xl bg-slate-50 border border-slate-100 hover:border-blue-100 hover:bg-blue-50/30 transition-colors group",
-        span
+        span,
       )}
     >
       <div className="flex items-start gap-3">
