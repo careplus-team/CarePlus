@@ -8,8 +8,9 @@ export async function POST(req: NextRequest) {
       .from("patient_channeling")
       .update({
         state: true,
+        updated_at: new Date().toISOString(),
       })
-      .eq("id", channelId)
+      .eq("channelId", channelId)
       .eq("patientEmail", patientEmail)
       .select("*")
       .maybeSingle();
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
       },
       {
         status: 500,
-      }
+      },
     );
   }
 }

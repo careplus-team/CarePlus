@@ -68,7 +68,7 @@ export default function ChannelVisitedPatientUpdate({
       } else {
         console.error(
           "Error starting channel session:",
-          sessionState.data.message
+          sessionState.data.message,
         );
       }
     } catch (error) {
@@ -95,7 +95,7 @@ export default function ChannelVisitedPatientUpdate({
       } else {
         console.error(
           "Error ending channel session:",
-          sessionState.data.message
+          sessionState.data.message,
         );
       }
     } catch (error) {
@@ -140,7 +140,7 @@ export default function ChannelVisitedPatientUpdate({
       } else {
         console.error(
           "Error fetching current channel data:",
-          channelData.data.message
+          channelData.data.message,
         );
         setChannelData(null);
         toast.error("Error fetching current channel data");
@@ -181,7 +181,7 @@ export default function ChannelVisitedPatientUpdate({
             "/api/get-user-by-email-api",
             {
               email: patientInfo.data.data.patientEmail,
-            }
+            },
           );
           console.log("Patient Info:", patientInfo.data.data);
           if (patientPersonalInfo.data.data === null) {
@@ -204,27 +204,40 @@ export default function ChannelVisitedPatientUpdate({
                 {
                   channelId: channelId,
                   slotNumber: id,
-                }
+                },
               );
               if (updateVisitedSlotsArray.data.success) {
                 toast.success("Patient marked as visited");
                 setVisitedPatientsNumbers((prev) => [...prev, id]);
-                const markPetientVisited = await axios.post(
-                  "/api/set-channeled-patient-attended",
-                  {
-                    channelId: channelId,
-                    patientEmail: patientPersonalInfo.data.data.email,
-                  }
-                );
-                console.log("Visited slots updated successfully");
               } else {
                 console.error(
                   "Error updating visited slots:",
-                  updateVisitedSlotsArray.data.message
+                  updateVisitedSlotsArray.data.message,
                 );
               }
             } catch (e) {
               console.error("Error updating visited slots:", e);
+            }
+
+            // Mark patient as attended independently of visited slots update
+            try {
+              const markPatientVisited = await axios.post(
+                "/api/set-channeled-patient-attended",
+                {
+                  channelId: channelId,
+                  patientEmail: patientPersonalInfo.data.data.email,
+                },
+              );
+              if (markPatientVisited.data.success) {
+                console.log("Patient attended status updated successfully");
+              } else {
+                console.error(
+                  "Error updating patient attended status:",
+                  markPatientVisited.data.message,
+                );
+              }
+            } catch (e) {
+              console.error("Error updating patient attended status:", e);
             }
           }
         } catch (e) {
@@ -385,8 +398,8 @@ export default function ChannelVisitedPatientUpdate({
                           isPending
                             ? "bg-slate-100 text-slate-300 cursor-not-allowed shadow-none scale-95"
                             : isSessionActive
-                            ? "bg-slate-100 text-slate-300 cursor-not-allowed shadow-none scale-95"
-                            : "bg-gradient-to-r from-teal-500 to-emerald-500 text-white  hover:-translate-y-1 hover:shadow-xl"
+                              ? "bg-slate-100 text-slate-300 cursor-not-allowed shadow-none scale-95"
+                              : "bg-gradient-to-r from-teal-500 to-emerald-500 text-white  hover:-translate-y-1 hover:shadow-xl"
                         }`}
                     >
                       <div
@@ -439,8 +452,8 @@ export default function ChannelVisitedPatientUpdate({
                           isPending
                             ? "bg-slate-100 text-slate-300 cursor-not-allowed shadow-none scale-95"
                             : !isSessionActive
-                            ? "bg-slate-100 text-slate-300 cursor-not-allowed shadow-none scale-95"
-                            : "bg-white border-2 border-rose-100 text-rose-500 hover:bg-rose-50 hover:border-rose-200  hover:-translate-y-1 hover:shadow-xl"
+                              ? "bg-slate-100 text-slate-300 cursor-not-allowed shadow-none scale-95"
+                              : "bg-white border-2 border-rose-100 text-rose-500 hover:bg-rose-50 hover:border-rose-200  hover:-translate-y-1 hover:shadow-xl"
                         }`}
                     >
                       <div
@@ -575,7 +588,8 @@ export default function ChannelVisitedPatientUpdate({
                 </div>
                 <Button
                   onClick={() => (
-                    setPatientData(null), setPatientPersonalData(null)
+                    setPatientData(null),
+                    setPatientPersonalData(null)
                   )}
                   variant="ghost"
                   className="border-2 bg-red-200 text-red-500 text-xl hover:bg-red-300 hover:text-red-700 rounded-full p-2 ml-auto shrink-0"
@@ -702,7 +716,7 @@ export default function ChannelVisitedPatientUpdate({
                       {String(index + 1).padStart(2, "0")}
                     </span>
                   </Button>
-                )
+                ),
               )}
             </div>
           ) : (

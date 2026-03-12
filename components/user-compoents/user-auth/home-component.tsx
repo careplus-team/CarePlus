@@ -7,7 +7,12 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import axios from "axios";
 import { toast } from "sonner";
-import { CalendarCheck, CalendarCheck2, Users, AlertCircle } from "lucide-react";
+import {
+  CalendarCheck,
+  CalendarCheck2,
+  Users,
+  AlertCircle,
+} from "lucide-react";
 import EmergencyRequestModal from "../emergency-request-modal";
 
 const HomeComponent = () => {
@@ -23,7 +28,7 @@ const HomeComponent = () => {
   const [issuing, setIssuing] = useState(false);
   const [lastTicket, setLastTicket] = useState<number | null>(null);
   const [upCommingChannelingData, setUpCommingChannelingData] = useState<any[]>(
-    []
+    [],
   );
   const [upDoctorData, setUpDoctorData] = useState<any[]>([]);
   const [isAlreadyBooked, setIsAlreadyBooked] = useState(false);
@@ -73,8 +78,8 @@ const HomeComponent = () => {
             .sort(
               (a: any, b: any) =>
                 new Date(b.createdAt).getTime() -
-                new Date(a.createdAt).getTime()
-            )
+                new Date(a.createdAt).getTime(),
+            ),
         );
       } else {
         toast.error("Error fetching notices");
@@ -111,7 +116,7 @@ const HomeComponent = () => {
             setNotices(
               (prev) =>
                 (prev as any[])?.filter((n: any) => n.id !== payload.old.id) ||
-                []
+                [],
             );
           } else if (payload.eventType === "UPDATE") {
             const updatedNotice = {
@@ -121,14 +126,14 @@ const HomeComponent = () => {
             setNotices(
               (prev) =>
                 (prev as any[])?.map((n: any) =>
-                  n.id === payload.new.id ? updatedNotice : n
-                ) || []
+                  n.id === payload.new.id ? updatedNotice : n,
+                ) || [],
             );
             setNotices((prev) =>
-              prev.map((n) => (n.id === payload.new.id ? updatedNotice : n))
+              prev.map((n) => (n.id === payload.new.id ? updatedNotice : n)),
             );
           }
-        }
+        },
       )
       .subscribe();
 
@@ -166,10 +171,10 @@ const HomeComponent = () => {
             setTips((prev) => prev.filter((n) => n.id !== payload.old.id));
           } else if (payload.eventType === "UPDATE") {
             setTips((prev) =>
-              prev.map((n) => (n.id === payload.new.id ? payload.new : n))
+              prev.map((n) => (n.id === payload.new.id ? payload.new : n)),
             );
           }
-        }
+        },
       )
       .subscribe();
 
@@ -212,7 +217,7 @@ const HomeComponent = () => {
           }
           console.log("inspect state", opdSessionData);
           console.log("Realtime update:", payload.new);
-        }
+        },
       )
       .subscribe();
 
@@ -256,7 +261,7 @@ const HomeComponent = () => {
         "/api/get-user-upcomming-channelings-api",
         {
           patientEmail: userInfo?.email,
-        }
+        },
       );
       if (response.data.success) {
         console.log("upcomming channelings", response.data.data);
@@ -279,15 +284,15 @@ const HomeComponent = () => {
             } catch (e) {
               console.error(
                 "Error fetching channel details for appointment",
-                e
+                e,
               );
               return { ...channeling, channelState: null };
             }
-          })
+          }),
         );
 
         const filtered = enriched.filter(
-          (a: any) => a.channelState !== "ended"
+          (a: any) => a.channelState !== "ended",
         );
         setUpCommingChannelingData(filtered || []);
 
@@ -324,7 +329,7 @@ const HomeComponent = () => {
         (payload) => {
           console.log("Realtime patient_channeling update:", payload);
           fetchUpcommingChannelings();
-        }
+        },
       )
       .subscribe();
 
@@ -337,7 +342,7 @@ const HomeComponent = () => {
         (payload) => {
           console.log("Realtime channel status update:", payload);
           fetchUpcommingChannelings();
-        }
+        },
       )
       .subscribe();
 
@@ -458,14 +463,19 @@ const HomeComponent = () => {
     startChannelListTransition(async () => {
       try {
         const channelListResponse = await axios.post(
-          "/api/get-channel-list-api"
+          "/api/get-channel-list-api",
         );
         if (channelListResponse.data.success) {
           console.log("available channel list", channelListResponse.data.data);
-          // Filter out ended channels so they do not appear on the dashboard
+          // Filter out ended and ongoing channels so they do not appear on the dashboard
           const availableFiltered = (
             channelListResponse.data.data || []
-          ).filter((c: any) => c.state !== "ended");
+          ).filter(
+            (c: any) =>
+              c.state !== "ended" &&
+              c.state !== "started" &&
+              c.state !== "active",
+          );
           setAvailableChannelList(availableFiltered);
           availableFiltered.forEach(async (channel: any) => {
             try {
@@ -473,7 +483,7 @@ const HomeComponent = () => {
                 "/api/doctor-details-get-api",
                 {
                   email: channel.doctorEmail,
-                }
+                },
               );
               if (channelListDoctorsData.data.success) {
                 console.log("avDoc", channelListDoctorsData.data.data);
@@ -483,17 +493,17 @@ const HomeComponent = () => {
                 ]);
               } else {
                 toast.error(
-                  "Error fetching doctor data for available channel list"
+                  "Error fetching doctor data for available channel list",
                 );
                 return;
               }
             } catch (e) {
               console.log(
                 "Error fetching doctor data for available channel list",
-                e
+                e,
               );
               toast.error(
-                "Error fetching doctor data for available channel list"
+                "Error fetching doctor data for available channel list",
               );
               return;
             }
@@ -518,7 +528,7 @@ const HomeComponent = () => {
         { event: "*", schema: "public", table: "channel" },
         (payload) => {
           fetchAvailableChannelList();
-        }
+        },
       )
       .subscribe();
 
@@ -551,11 +561,9 @@ const HomeComponent = () => {
                 Your health journey continues. Here's your personalized
                 dashboard.
               </p>
-        
             </div>
 
             <div className="flex items-center space-x-4">
-             
               <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
                 <Image
                   src={dbUserInfo?.profilePicture || "/temp_user.webp"}
@@ -642,7 +650,7 @@ const HomeComponent = () => {
                         ) : (
                           <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
                             {getInitials(
-                              opdDoctorData?.name || opdSessionData?.doctorName
+                              opdDoctorData?.name || opdSessionData?.doctorName,
                             )}
                           </div>
                         )}
@@ -710,10 +718,10 @@ const HomeComponent = () => {
                               Number(userBooking.bookingNumber)
                                 ? "bg-green-50 border-green-200"
                                 : Number(
-                                    opdSessionData?.numberOfPatientsSlots
-                                  ) > Number(userBooking.bookingNumber)
-                                ? "bg-red-50 border-red-200"
-                                : "bg-purple-50 border-purple-200"
+                                      opdSessionData?.numberOfPatientsSlots,
+                                    ) > Number(userBooking.bookingNumber)
+                                  ? "bg-red-50 border-red-200"
+                                  : "bg-purple-50 border-purple-200"
                             }`}
                           >
                             <span className="text-gray-600 font-medium">
@@ -722,34 +730,34 @@ const HomeComponent = () => {
                             <span
                               className={`font-bold ${
                                 Number(
-                                  opdSessionData?.numberOfPatientsSlots
+                                  opdSessionData?.numberOfPatientsSlots,
                                 ) === Number(userBooking.bookingNumber)
                                   ? "text-green-600 animate-pulse"
                                   : Number(
-                                      opdSessionData?.numberOfPatientsSlots
-                                    ) > Number(userBooking.bookingNumber)
-                                  ? "text-red-600"
-                                  : "text-purple-600"
+                                        opdSessionData?.numberOfPatientsSlots,
+                                      ) > Number(userBooking.bookingNumber)
+                                    ? "text-red-600"
+                                    : "text-purple-600"
                               }`}
                             >
                               {Number(opdSessionData?.numberOfPatientsSlots) ===
                               Number(userBooking.bookingNumber)
                                 ? "It's Your Turn!"
                                 : Number(
-                                    opdSessionData?.numberOfPatientsSlots
-                                  ) > Number(userBooking.bookingNumber)
-                                ? "Your Turn Passed"
-                                : `${
-                                    (Number(userBooking.bookingNumber) -
-                                      Number(
-                                        opdSessionData?.numberOfPatientsSlots
-                                      )) *
-                                      Number(
-                                        opdSessionData?.estimatedTimePerPatient ||
-                                          5
-                                      ) +
-                                    " mins wait"
-                                  }`}
+                                      opdSessionData?.numberOfPatientsSlots,
+                                    ) > Number(userBooking.bookingNumber)
+                                  ? "Your Turn Passed"
+                                  : `${
+                                      (Number(userBooking.bookingNumber) -
+                                        Number(
+                                          opdSessionData?.numberOfPatientsSlots,
+                                        )) *
+                                        Number(
+                                          opdSessionData?.estimatedTimePerPatient ||
+                                            5,
+                                        ) +
+                                      " mins wait"
+                                    }`}
                             </span>
                           </div>
                         </>
@@ -821,7 +829,10 @@ const HomeComponent = () => {
               </div>
 
               <div className="p-6 space-y-4">
-                <Button  onClick={() => setIsEmergencyModalOpen(true)} className="w-full bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white font-semibold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200">
+                <Button
+                  onClick={() => setIsEmergencyModalOpen(true)}
+                  className="w-full bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white font-semibold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200"
+                >
                   <svg
                     className="w-5 h-5 mr-2"
                     fill="none"
@@ -948,11 +959,11 @@ const HomeComponent = () => {
                             appointment.channelState === "active"
                           ) {
                             router.push(
-                              `/channel-monitor/${appointment.channelId}`
+                              `/channel-monitor/${appointment.channelId}`,
                             );
                           } else {
                             router.push(
-                              `/channel-book/${appointment.channelId}`
+                              `/channel-book/${appointment.channelId}`,
                             );
                           }
                         }}
@@ -964,7 +975,8 @@ const HomeComponent = () => {
                             <Image
                               src={
                                 upDoctorData.find(
-                                  (doc) => doc.email === appointment.doctorEmail
+                                  (doc) =>
+                                    doc.email === appointment.doctorEmail,
                                 )?.profilePicture || "/temp_user.webp"
                               }
                               alt="Doctor"
@@ -981,13 +993,13 @@ const HomeComponent = () => {
                             <h4 className="font-semibold text-gray-900">
                               Doctor :{" "}
                               {upDoctorData.find(
-                                (doc) => doc.email === appointment.doctorEmail
+                                (doc) => doc.email === appointment.doctorEmail,
                               )?.name || "Loading..."}
                             </h4>
                             <p className="text-sm text-gray-600">
                               Speciality :{" "}
                               {upDoctorData.find(
-                                (doc) => doc.email === appointment.doctorEmail
+                                (doc) => doc.email === appointment.doctorEmail,
                               )?.specialization || "Loading..."}
                             </p>
                             <p className="text-xs text-gray-500">
@@ -1131,7 +1143,7 @@ const HomeComponent = () => {
                                 src={
                                   availableChannelListDoctorData.find(
                                     (doc) =>
-                                      doc.email === channeling.doctorEmail
+                                      doc.email === channeling.doctorEmail,
                                   )?.profilePicture || "/temp_user.webp"
                                 }
                                 height={100}
@@ -1147,17 +1159,17 @@ const HomeComponent = () => {
 
                               <p className=" text-gray-900 group-hover:text-blue-700 transition-colors">
                                 {availableChannelListDoctorData.find(
-                                  (doc) => doc.email === channeling.doctorEmail
+                                  (doc) => doc.email === channeling.doctorEmail,
                                 )?.name || "Loading..."}
                               </p>
                               <p className="text-sm text-blue-600 font-medium">
                                 {availableChannelListDoctorData.find(
-                                  (doc) => doc.email === channeling.doctorEmail
+                                  (doc) => doc.email === channeling.doctorEmail,
                                 )?.specialization || "Loading..."}
                               </p>
                               <p className="text-xs text-gray-500">
                                 {availableChannelListDoctorData.find(
-                                  (doc) => doc.email === channeling.doctorEmail
+                                  (doc) => doc.email === channeling.doctorEmail,
                                 )?.workplace || "Loading..."}
                               </p>
                             </div>
@@ -1323,8 +1335,8 @@ const HomeComponent = () => {
                               notice.piority === "high"
                                 ? "bg-red-100 text-red-700"
                                 : notice.piority === "medium"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-green-100 text-green-700"
+                                  ? "bg-yellow-100 text-yellow-700"
+                                  : "bg-green-100 text-green-700"
                             }`}
                           >
                             {notice.piority}
