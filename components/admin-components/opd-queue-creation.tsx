@@ -77,7 +77,7 @@ export default function QueueCreation() {
         console.log("Existing OPD Sessions:", existingSessions.data.data);
         if (existingSessions.data.data.length > 0) {
           toast.error(
-            "An existing OPD session is active. Please end it before creating a new one."
+            "An existing OPD session is active. Please end it before creating a new one.",
           );
           router.push("/admin");
           return;
@@ -105,14 +105,14 @@ export default function QueueCreation() {
             numberOfPatientsSlots: formData.numberOfPatientsSlots,
             estimatedTimePerPatient: formData.estimatedTimePerPatient,
             notes: formData.notes,
-          }
+          },
         );
         console.log("OPD Session Creation Results:", creationResults);
         if (creationResults.data.success) {
           toast.success("OPD Session created successfully!");
         } else {
           toast.error(
-            `Failed to create OPD Session: ${creationResults.data.message}`
+            `Failed to create OPD Session: ${creationResults.data.message}`,
           );
         }
       } catch (e) {
@@ -175,8 +175,6 @@ export default function QueueCreation() {
         </div>
       ) : (
         <div className="w-full flex flex-col items-center rounded-xl">
-    
-
           {/* Background Decor */}
           <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
             <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-emerald-300/20 rounded-full mix-blend-multiply filter blur-[120px] animate-pulse"></div>
@@ -220,7 +218,7 @@ export default function QueueCreation() {
                                 ...formData,
                                 doctorEmail: e.target.value,
                                 doctorName: doctorList.find(
-                                  (d) => d.email === e.target.value
+                                  (d) => d.email === e.target.value,
                                 )?.name,
                               })
                             }
@@ -259,7 +257,7 @@ export default function QueueCreation() {
                               src={
                                 formData.doctorEmail
                                   ? doctorList.find(
-                                      (d) => d.email === formData.doctorEmail
+                                      (d) => d.email === formData.doctorEmail,
                                     )?.profilePicture
                                   : "/doctor-default-avatar.png"
                               }
@@ -269,14 +267,14 @@ export default function QueueCreation() {
                             <p className="text-sm font-bold text-slate-700 truncate">
                               {formData.doctorEmail
                                 ? doctorList.find(
-                                    (d) => d.email === formData.doctorEmail
+                                    (d) => d.email === formData.doctorEmail,
                                   )?.name
                                 : "No Doctor Selected"}
                             </p>
                             <p className="text-xs text-slate-500 truncate">
                               {formData.doctorEmail
                                 ? doctorList.find(
-                                    (d) => d.email === formData.doctorEmail
+                                    (d) => d.email === formData.doctorEmail,
                                   )?.specialization
                                 : "Please select a doctor"}
                             </p>
@@ -436,9 +434,6 @@ export default function QueueCreation() {
                     </button>
                   </div>
                 </div>
-
-               
-               
               </div>
             </div>
           </div>
